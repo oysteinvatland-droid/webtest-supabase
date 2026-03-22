@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claude Web Plugin Test Page</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    header h1 { font-size: 1.8rem; color: #2c3e50; }
+    header p  { color: #666; margin-top: 0.4rem; font-size: 0.95rem; }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      padding: 1.8rem;
+      max-width: 560px;
+      margin: 0 auto 1.5rem;
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      color: #555;
+      margin-bottom: 1.2rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Image */
+    .image-section { text-align: center; }
+    #profile-image {
+      width: 160px; height: 160px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid #e0e7ff;
+      display: block;
+      margin: 0 auto;
+    }
+
+    /* Form fields */
+    .field { margin-bottom: 1rem; }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #444;
+      margin-bottom: 0.3rem;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-family: inherit;
+      transition: border-color 0.2s;
+      outline: none;
+      background: white;
+    }
+
+    input[type="text"]:focus,
+    input[type="email"]:focus,
+    select:focus,
+    textarea:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+    }
+
+    textarea { resize: vertical; min-height: 80px; }
+
+    /* Checkboxes & radios */
+    .check-group { display: flex; flex-direction: column; gap: 0.5rem; }
+
+    .check-item {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+
+    .check-item input { width: 1rem; height: 1rem; cursor: pointer; }
+
+    /* Buttons */
+    .buttons { display: flex; gap: 0.75rem; margin-top: 1.4rem; }
+
+    button {
+      flex: 1;
+      padding: 0.65rem 1rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    button:active { transform: scale(0.98); }
+
+    #submit-btn  { background: #6366f1; color: white; }
+    #submit-btn:hover { background: #4f46e5; }
+
+    #reset-btn   { background: #e5e7eb; color: #374151; }
+    #reset-btn:hover { background: #d1d5db; }
+
+    #modal-btn   { background: #0ea5e9; color: white; flex: none; padding: 0.65rem 1.4rem; }
+    #modal-btn:hover { background: #0284c7; }
+
+    /* Result */
+    #result {
+      display: none;
+      background: #f0fdf4;
+      border: 1.5px solid #86efac;
+      border-radius: 10px;
+      padding: 1.2rem 1.5rem;
+      max-width: 560px;
+      margin: 0 auto 1.5rem;
+    }
+
+    #result h2 { font-size: 1rem; color: #16a34a; margin-bottom: 0.8rem; }
+
+    #result dl {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.35rem 1rem;
+    }
+
+    #result dt { font-weight: 600; color: #555; font-size: 0.9rem; }
+    #result dd { color: #111; font-size: 0.9rem; }
+
+    /* Modal */
+    #modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #modal-overlay.open { display: flex; }
+
+    #modal {
+      background: white;
+      border-radius: 14px;
+      padding: 2rem;
+      max-width: 420px;
+      width: 90%;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+    }
+
+    #modal h3 { font-size: 1.2rem; margin-bottom: 0.8rem; color: #2c3e50; }
+    #modal p  { font-size: 0.95rem; color: #555; margin-bottom: 1.4rem; }
+
+    #modal-close {
+      background: #6366f1;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.6rem 1.4rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    #modal-close:hover { background: #4f46e5; }
+
+    /* Counter widget */
+    .counter {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .counter button {
+      flex: none;
+      width: 2.4rem;
+      height: 2.4rem;
+      font-size: 1.4rem;
+      line-height: 1;
+      padding: 0;
+      background: #e0e7ff;
+      color: #4f46e5;
+      border-radius: 8px;
+    }
+
+    .counter button:hover { background: #c7d2fe; }
+
+    #counter-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      min-width: 2rem;
+      text-align: center;
+      color: #4f46e5;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Claude Web Plugin Test Page</h1>
+    <p>Testside for Playwright og Claude web-plugins</p>
+    <nav style="margin-top: 0.8rem;">
+      <a href="users.html" style="color: #6366f1; font-weight: 600; text-decoration: none;">Vis alle kontakter &rarr;</a>
+    </nav>
+  </header>
+
+  <!-- Image -->
+  <div class="card image-section">
+    <h2>Profilbilde</h2>
+    <img
+      id="profile-image"
+      src="https://picsum.photos/seed/claude-test/200/200"
+      alt="Eksempelbilde av en person"
+    >
+  </div>
+
+  <!-- Form -->
+  <div class="card">
+    <form id="main-form" novalidate>
+      <h2>Kontaktinformasjon</h2>
+
+      <div class="field">
+        <label for="name">Fullt navn</label>
+        <input type="text" id="name" name="name" placeholder="Ola Nordmann" autocomplete="name">
+      </div>
+
+      <div class="field">
+        <label for="email">E-post</label>
+        <input type="email" id="email" name="email" placeholder="ola@example.com" autocomplete="email">
+      </div>
+
+      <div class="field">
+        <label for="address">Gateadresse</label>
+        <input type="text" id="address" name="address" placeholder="Storgata 1" autocomplete="street-address">
+      </div>
+
+      <div class="field">
+        <label for="city">By</label>
+        <input type="text" id="city" name="city" placeholder="Oslo" autocomplete="address-level2">
+      </div>
+
+      <div class="field">
+        <label for="country">Land</label>
+        <select id="country" name="country">
+          <option value="">— Velg land —</option>
+          <option value="no">Norge</option>
+          <option value="se">Sverige</option>
+          <option value="dk">Danmark</option>
+          <option value="fi">Finland</option>
+          <option value="other">Annet</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Interesser</label>
+        <div class="check-group" id="interests">
+          <label class="check-item">
+            <input type="checkbox" name="interests" value="teknologi" id="cb-tech"> Teknologi
+          </label>
+          <label class="check-item">
+            <input type="checkbox" name="interests" value="musikk" id="cb-music"> Musikk
+          </label>
+          <label class="check-item">
+            <input type="checkbox" name="interests" value="sport" id="cb-sport"> Sport
+          </label>
+          <label class="check-item">
+            <input type="checkbox" name="interests" value="reise" id="cb-travel"> Reise
+          </label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Foretrukket kontakt</label>
+        <div class="check-group" id="contact-pref">
+          <label class="check-item">
+            <input type="radio" name="contact" value="email" id="radio-email"> E-post
+          </label>
+          <label class="check-item">
+            <input type="radio" name="contact" value="phone" id="radio-phone"> Telefon
+          </label>
+          <label class="check-item">
+            <input type="radio" name="contact" value="none" id="radio-none"> Ingen kontakt
+          </label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="message">Melding</label>
+        <textarea id="message" name="message" placeholder="Skriv en valgfri melding..."></textarea>
+      </div>
+
+      <div class="buttons">
+        <button type="submit" id="submit-btn">Send</button>
+        <button type="button" id="reset-btn">Tilbakestill</button>
+        <button type="button" id="modal-btn">Åpne modal</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Result -->
+  <div id="result" role="region" aria-label="Innsendte data">
+    <h2>Innsendt informasjon</h2>
+    <dl>
+      <dt>Navn:</dt>       <dd id="result-name"></dd>
+      <dt>E-post:</dt>     <dd id="result-email"></dd>
+      <dt>Adresse:</dt>    <dd id="result-address"></dd>
+      <dt>By:</dt>         <dd id="result-city"></dd>
+      <dt>Land:</dt>       <dd id="result-country"></dd>
+      <dt>Interesser:</dt> <dd id="result-interests"></dd>
+      <dt>Kontakt:</dt>    <dd id="result-contact"></dd>
+      <dt>Melding:</dt>    <dd id="result-message"></dd>
+    </dl>
+  </div>
+
+  <!-- DB status -->
+  <p id="db-status" style="display:none; text-align:center; font-weight:600; margin-bottom:1rem; font-size:0.95rem;"></p>
+
+  <!-- Counter widget -->
+  <div class="card">
+    <h2>Teller (interaksjonstest)</h2>
+    <div class="counter">
+      <button id="counter-dec" type="button" aria-label="Minsk">−</button>
+      <span id="counter-value">0</span>
+      <button id="counter-inc" type="button" aria-label="Øk">+</button>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div id="modal">
+      <h3 id="modal-title">Dette er en testmodal</h3>
+      <p>Denne modalen brukes for å teste at web-plugins kan oppdage, åpne og lukke overlays og dialoger.</p>
+      <button id="modal-close">Lukk</button>
+    </div>
+  </div>
+
+  <script>
+    // Supabase client
+    const sb = window.supabase.createClient(
+      'https://bpnjioorcjqvntxkpuia.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwbmppb29yY2pxdm50eGtwdWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxMjMyODMsImV4cCI6MjA4OTY5OTI4M30.Wc3ZUXK1xIB_9_kCPyEesmCM7mjLLTOZYgAv2yqro04'
+    );
+
+    // Form submit
+    document.getElementById('main-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const get = id => document.getElementById(id).value.trim();
+      const checkedValues = (name) => [...document.querySelectorAll(`input[name="${name}"]:checked`)]
+        .map(el => el.value);
+      const checkedDisplay = (name) => checkedValues(name).join(', ') || '—';
+
+      const countryEl = document.getElementById('country');
+      const countryText = countryEl.options[countryEl.selectedIndex].text;
+
+      document.getElementById('result-name').textContent     = get('name')    || '—';
+      document.getElementById('result-email').textContent    = get('email')   || '—';
+      document.getElementById('result-address').textContent  = get('address') || '—';
+      document.getElementById('result-city').textContent     = get('city')    || '—';
+      document.getElementById('result-country').textContent  = countryEl.value ? countryText : '—';
+      document.getElementById('result-interests').textContent = checkedDisplay('interests');
+      document.getElementById('result-contact').textContent  = checkedDisplay('contact');
+      document.getElementById('result-message').textContent  = get('message') || '—';
+
+      const result = document.getElementById('result');
+      result.style.display = 'block';
+      result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      // Send to Supabase
+      const contactMethod = checkedValues('contact');
+      const { error } = await sb.from('contacts').insert({
+        name: get('name'),
+        email: get('email'),
+        address: get('address') || null,
+        city: get('city') || null,
+        country: countryEl.value || null,
+        interests: checkedValues('interests'),
+        contact_method: contactMethod.length ? contactMethod[0] : null,
+        message: get('message') || null
+      });
+
+      const statusEl = document.getElementById('db-status');
+      if (error) {
+        statusEl.textContent = 'Feil ved lagring: ' + error.message;
+        statusEl.style.color = '#dc2626';
+      } else {
+        statusEl.textContent = 'Lagret til database!';
+        statusEl.style.color = '#16a34a';
+      }
+      statusEl.style.display = 'block';
+      setTimeout(() => { statusEl.style.display = 'none'; }, 4000);
+    });
+
+    // Reset
+    document.getElementById('reset-btn').addEventListener('click', function() {
+      document.getElementById('main-form').reset();
+      document.getElementById('result').style.display = 'none';
+    });
+
+    // Modal
+    const overlay = document.getElementById('modal-overlay');
+    document.getElementById('modal-btn').addEventListener('click', () => overlay.classList.add('open'));
+    document.getElementById('modal-close').addEventListener('click', () => overlay.classList.remove('open'));
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+
+    // Counter
+    let count = 0;
+    const counterVal = document.getElementById('counter-value');
+    document.getElementById('counter-inc').addEventListener('click', () => {
+      counterVal.textContent = ++count;
+    });
+    document.getElementById('counter-dec').addEventListener('click', () => {
+      counterVal.textContent = --count;
+    });
+  </script>
+
+</body>
+</html>
