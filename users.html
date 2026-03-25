@@ -96,6 +96,7 @@
           <th>By</th>
           <th>Land</th>
           <th>Interesser</th>
+          <th>Notater</th>
           <th>Opprettet</th>
         </tr>
       </thead>
@@ -144,6 +145,7 @@
           '<td>' + esc(c.city || '—') + '</td>' +
           '<td>' + esc(countryMap[c.country] || c.country || '—') + '</td>' +
           '<td>' + esc(c.interests ? c.interests.join(', ') : '—') + '</td>' +
+          '<td>' + esc(c.notes || '—') + '</td>' +
           '<td>' + esc(date) + '</td>';
         tbody.appendChild(tr);
       }

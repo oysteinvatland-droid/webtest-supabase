@@ -6,3 +6,4 @@ Thumbs.db
 *.log
 .playwright-mcp/
 .claude/
+.vercel

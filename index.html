@@ -214,6 +214,53 @@
       text-align: center;
       color: #4f46e5;
     }
+
+    /* Dictate button */
+    .notes-field { position: relative; }
+
+    #dictate-btn {
+      margin-top: 0.5rem;
+      flex: none;
+      padding: 0.45rem 1rem;
+      background: #e0e7ff;
+      color: #4f46e5;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      width: auto;
+    }
+
+    #dictate-btn:hover { background: #c7d2fe; }
+
+    #ai-fill-btn {
+      margin-top: 0.5rem;
+      flex: none;
+      padding: 0.45rem 1rem;
+      background: #d1fae5;
+      color: #059669;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      width: auto;
+    }
+
+    #ai-fill-btn:hover { background: #a7f3d0; }
+
+    #ai-fill-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    #dictate-btn.recording {
+      background: #fee2e2;
+      color: #dc2626;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.65; }
+    }
   </style>
 </head>
 <body>
@@ -311,6 +358,13 @@
         <textarea id="message" name="message" placeholder="Skriv en valgfri melding..."></textarea>
       </div>
 
+      <div class="field notes-field">
+        <label for="notes">Notater</label>
+        <textarea id="notes" name="notes" placeholder="Dikter eller skriv notater..."></textarea>
+        <button type="button" id="dictate-btn">🎤 Dikter</button>
+        <button type="button" id="ai-fill-btn">🤖 AI Fyll</button>
+      </div>
+
       <div class="buttons">
         <button type="submit" id="submit-btn">Send</button>
         <button type="button" id="reset-btn">Tilbakestill</button>
@@ -331,6 +385,7 @@
       <dt>Interesser:</dt> <dd id="result-interests"></dd>
       <dt>Kontakt:</dt>    <dd id="result-contact"></dd>
       <dt>Melding:</dt>    <dd id="result-message"></dd>
+      <dt>Notater:</dt>    <dd id="result-notes"></dd>
     </dl>
   </div>
 
@@ -382,6 +437,7 @@
       document.getElementById('result-interests').textContent = checkedDisplay('interests');
       document.getElementById('result-contact').textContent  = checkedDisplay('contact');
       document.getElementById('result-message').textContent  = get('message') || '—';
+      document.getElementById('result-notes').textContent    = get('notes')   || '—';
 
       const result = document.getElementById('result');
       result.style.display = 'block';
@@ -397,7 +453,8 @@
         country: countryEl.value || null,
         interests: checkedValues('interests'),
         contact_method: contactMethod.length ? contactMethod[0] : null,
-        message: get('message') || null
+        message: get('message') || null,
+        notes: get('notes') || null
       });
 
       const statusEl = document.getElementById('db-status');
@@ -432,6 +489,113 @@
     });
     document.getElementById('counter-dec').addEventListener('click', () => {
       counterVal.textContent = --count;
+    });
+  </script>
+
+  <!-- AI Fill handler -->
+  <script>
+    document.getElementById('ai-fill-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('ai-fill-btn');
+      const notesEl = document.getElementById('notes');
+      const text = notesEl.value.trim();
+
+      if (!text) {
+        alert('Skriv eller dikter tekst i notatfeltet først.');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Tolker...';
+
+      try {
+        const resp = await fetch('/api/interpret', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text }),
+        });
+
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          throw new Error(err.error || 'API-feil: ' + resp.status);
+        }
+
+        const data = await resp.json();
+
+        // Fill text/email inputs
+        if (data.name) document.getElementById('name').value = data.name;
+        if (data.email) document.getElementById('email').value = data.email;
+        if (data.address) document.getElementById('address').value = data.address;
+        if (data.city) document.getElementById('city').value = data.city;
+        if (data.message) document.getElementById('message').value = data.message;
+
+        // Fill country select
+        if (data.country) document.getElementById('country').value = data.country;
+
+        // Fill interest checkboxes
+        document.querySelectorAll('input[name="interests"]').forEach(cb => {
+          cb.checked = Array.isArray(data.interests) && data.interests.includes(cb.value);
+        });
+
+        // Fill contact method radio
+        if (data.contact_method) {
+          const radio = document.querySelector(`input[name="contact"][value="${data.contact_method}"]`);
+          if (radio) radio.checked = true;
+        }
+      } catch (err) {
+        alert('Kunne ikke tolke teksten: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🤖 AI Fyll';
+      }
+    });
+  </script>
+
+  <!-- Soniox speech-to-text -->
+  <script type="module">
+    import { SonioxClient } from 'https://cdn.jsdelivr.net/npm/@soniox/speech-to-text-web/+esm';
+
+    const SONIOX_API_KEY = '2cff67f72a64c484229ef14dbcfe55c36436d46cf5466b950fe0f7a0682971bd';
+    let client = null;
+
+    document.getElementById('dictate-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('dictate-btn');
+      const notesEl = document.getElementById('notes');
+
+      if (client) {
+        client.stop();
+        return;
+      }
+
+      btn.textContent = '⏹ Stopp';
+      btn.classList.add('recording');
+
+      const baseText = notesEl.value;
+      let finalizedText = '';
+
+      client = new SonioxClient({ apiKey: SONIOX_API_KEY });
+
+      client.start({
+        model: 'stt-rt-v4',
+        languageHints: ['no', 'en'],
+        onPartialResult(result) {
+          const finals  = result.tokens.filter(t => t.is_final).map(t => t.text).join('');
+          const partial = result.tokens.filter(t => !t.is_final).map(t => t.text).join('');
+          if (finals) finalizedText += finals;
+          const prefix = baseText ? baseText + ' ' : '';
+          notesEl.value = prefix + finalizedText + partial;
+        },
+        onFinished() {
+          btn.textContent = '🎤 Dikter';
+          btn.classList.remove('recording');
+          client = null;
+        },
+        onError(errorCode, errorMessage) {
+          console.error('Soniox error:', errorCode, errorMessage);
+          btn.textContent = '🎤 Dikter';
+          btn.classList.remove('recording');
+          client = null;
+        }
+      });
     });
   </script>
 
