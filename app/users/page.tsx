@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
+import { getSupabase } from '@/lib/supabase';
 import styles from './page.module.css';
 
 interface Contact {
@@ -26,7 +26,7 @@ export default function UsersPage() {
 
   useEffect(() => {
     async function load() {
-      const { data, error } = await supabase
+      const { data, error } = await getSupabase()
         .from('contacts')
         .select('*')
         .order('created_at', { ascending: false });

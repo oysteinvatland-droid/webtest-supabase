@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
+import { getSupabase } from '@/lib/supabase';
 import styles from './page.module.css';
 
 interface FormData {
@@ -100,7 +100,7 @@ export default function ContactPage() {
       notes: form.notes || '—',
     });
 
-    const { error } = await supabase.from('contacts').insert({
+    const { error } = await getSupabase().from('contacts').insert({
       name: form.name,
       email: form.email,
       address: form.address || null,
