@@ -236,12 +236,15 @@ export default function ContactPage() {
           letter-spacing: 0.1em;
         }
         .navLink {
-          color: white;
+          color: #ffffff !important;
           text-decoration: none;
           font-size: 0.85rem;
           font-weight: 400;
           letter-spacing: 0.15em;
           text-transform: uppercase;
+        }
+        .navLink:visited {
+          color: #ffffff !important;
         }
         .hero {
           position: relative;
