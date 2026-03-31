@@ -206,6 +206,7 @@
   position: relative;
   aspect-ratio: 4/5;
   overflow: hidden;
+  max-width: 50%;
 }
 
 .profileImage {
