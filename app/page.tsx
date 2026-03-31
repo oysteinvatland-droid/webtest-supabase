@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getSupabase } from '@/lib/supabase';
@@ -15,6 +15,11 @@ interface FormData {
   contact: string;
   message: string;
   notes: string;
+}
+
+interface FormErrors {
+  name?: string;
+  email?: string;
 }
 
 interface SubmittedResult {
@@ -56,19 +61,61 @@ const CONTACT_METHODS = [
   { value: 'none', label: 'No Contact', id: 'radio-none' },
 ];
 
+// Email validation regex
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function ContactPage() {
   const [form, setForm] = useState<FormData>(INITIAL_FORM);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [result, setResult] = useState<SubmittedResult | null>(null);
   const [dbStatus, setDbStatus] = useState<{ message: string; isError: boolean } | null>(null);
   const [count, setCount] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isAiFilling, setIsAiFilling] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sonioxClientRef = useRef<any>(null);
   const finalizedTextRef = useRef('');
   const baseTextRef = useRef('');
+
+  // Validate form fields
+  const validateField = useCallback((field: keyof FormData, value: string): string | undefined => {
+    switch (field) {
+      case 'name':
+        if (!value.trim()) return 'Name is required';
+        if (value.trim().length < 2) return 'Name must be at least 2 characters';
+        return undefined;
+      case 'email':
+        if (!value.trim()) return 'Email is required';
+        if (!EMAIL_REGEX.test(value)) return 'Please enter a valid email address';
+        return undefined;
+      default:
+        return undefined;
+    }
+  }, []);
+
+  // Update errors when form changes
+  useEffect(() => {
+    const newErrors: FormErrors = {};
+    if (touched.name) {
+      const nameError = validateField('name', form.name);
+      if (nameError) newErrors.name = nameError;
+    }
+    if (touched.email) {
+      const emailError = validateField('email', form.email);
+      if (emailError) newErrors.email = emailError;
+    }
+    setErrors(newErrors);
+  }, [form.name, form.email, touched, validateField]);
+
+  const handleBlur = useCallback((field: string) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+  }, []);
 
   const updateField = useCallback((field: keyof FormData, value: string | string[]) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -86,6 +133,19 @@ export default function ContactPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validate all required fields
+    setTouched({ name: true, email: true });
+    const nameError = validateField('name', form.name);
+    const emailError = validateField('email', form.email);
+    
+    if (nameError || emailError) {
+      setErrors({ name: nameError, email: emailError });
+      return;
+    }
+
+    setIsSubmitting(true);
+    setShowSuccess(false);
+
     const countryLabel = COUNTRY_OPTIONS.find(c => c.value === form.country)?.label || '—';
 
     setResult({
@@ -100,29 +160,42 @@ export default function ContactPage() {
       notes: form.notes || '—',
     });
 
-    const { error } = await getSupabase().from('contacts').insert({
-      name: form.name,
-      email: form.email,
-      address: form.address || null,
-      city: form.city || null,
-      country: form.country || null,
-      interests: form.interests,
-      contact_method: form.contact || null,
-      message: form.message || null,
-      notes: form.notes || null,
-    });
+    try {
+      const { error } = await getSupabase().from('contacts').insert({
+        name: form.name,
+        email: form.email,
+        address: form.address || null,
+        city: form.city || null,
+        country: form.country || null,
+        interests: form.interests,
+        contact_method: form.contact || null,
+        message: form.message || null,
+        notes: form.notes || null,
+      });
 
-    if (error) {
-      setDbStatus({ message: 'Error saving: ' + error.message, isError: true });
-    } else {
-      setDbStatus({ message: 'Successfully saved to database', isError: false });
+      if (error) {
+        setDbStatus({ message: `Failed to save: ${error.message}. Please try again.`, isError: true });
+      } else {
+        setDbStatus({ message: 'Your message has been sent successfully!', isError: false });
+        setShowSuccess(true);
+      }
+    } catch (err) {
+      setDbStatus({ 
+        message: `Connection error: ${err instanceof Error ? err.message : 'Please check your internet connection and try again.'}`, 
+        isError: true 
+      });
+    } finally {
+      setIsSubmitting(false);
+      setTimeout(() => setDbStatus(null), 5000);
     }
-    setTimeout(() => setDbStatus(null), 4000);
   };
 
   const handleReset = () => {
     setForm(INITIAL_FORM);
     setResult(null);
+    setErrors({});
+    setTouched({});
+    setShowSuccess(false);
   };
 
   const handleAiFill = async () => {
@@ -208,13 +281,21 @@ export default function ContactPage() {
     }
   };
 
+  const bgColor = darkMode ? '#0a0a0a' : '#fafafa';
+  const textColor = darkMode ? '#f5f5f0' : '#171717';
+  const mutedColor = darkMode ? '#737373' : '#525252';
+  const borderColor = darkMode ? '#262626' : '#e5e5e5';
+  const inputBg = darkMode ? '#141414' : '#ffffff';
+  const cardBg = darkMode ? '#171717' : '#f5f5f5';
+
   return (
     <div className="page">
       <style jsx>{`
         .page {
           min-height: 100vh;
-          background: #0a0a0a;
-          color: #f5f5f0;
+          background: ${bgColor};
+          color: ${textColor};
+          transition: background 0.3s ease, color 0.3s ease;
         }
         .nav {
           position: fixed;
@@ -226,25 +307,65 @@ export default function ContactPage() {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          mix-blend-mode: difference;
+          mix-blend-mode: ${darkMode ? 'difference' : 'normal'};
+        }
+        .navLeft {
+          display: flex;
+          align-items: center;
+          gap: 2rem;
         }
         .logo {
           font-size: 1.5rem;
           font-weight: 500;
-          color: white;
+          color: ${darkMode ? 'white' : '#171717'};
           text-decoration: none;
           letter-spacing: 0.1em;
+          transition: opacity 0.3s ease;
+        }
+        .logo:hover {
+          opacity: 0.7;
+        }
+        .themeToggle {
+          padding: 0.5rem 1rem;
+          background: transparent;
+          border: 1px solid ${borderColor};
+          color: ${mutedColor};
+          font-size: 0.7rem;
+          font-weight: 500;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+        .themeToggle:hover {
+          background: ${cardBg};
+          color: ${textColor};
         }
         .navLink {
-          color: #ffffff !important;
+          color: ${darkMode ? '#ffffff' : '#171717'} !important;
           text-decoration: none;
           font-size: 0.85rem;
           font-weight: 400;
           letter-spacing: 0.15em;
           text-transform: uppercase;
+          transition: opacity 0.3s ease;
+          position: relative;
         }
         .navLink:visited {
-          color: #ffffff !important;
+          color: ${darkMode ? '#ffffff' : '#171717'} !important;
+        }
+        .navLink::after {
+          content: '';
+          position: absolute;
+          bottom: -4px;
+          left: 0;
+          width: 0;
+          height: 1px;
+          background: #c9a962;
+          transition: width 0.3s ease;
+        }
+        .navLink:hover::after {
+          width: 100%;
         }
         .hero {
           position: relative;
@@ -264,13 +385,16 @@ export default function ContactPage() {
           width: 100%;
           height: 100%;
           object-fit: cover;
-          opacity: 0.6;
+          opacity: ${darkMode ? '0.6' : '0.8'};
           filter: grayscale(30%);
         }
         .heroOverlay {
           position: absolute;
           inset: 0;
-          background: linear-gradient(to top, rgba(10,10,10,0.95) 0%, rgba(10,10,10,0.4) 50%, rgba(10,10,10,0.2) 100%);
+          background: ${darkMode 
+            ? 'linear-gradient(to top, rgba(10,10,10,0.95) 0%, rgba(10,10,10,0.4) 50%, rgba(10,10,10,0.2) 100%)'
+            : 'linear-gradient(to top, rgba(250,250,250,0.95) 0%, rgba(250,250,250,0.4) 50%, rgba(250,250,250,0.2) 100%)'
+          };
         }
         .heroContent {
           position: relative;
@@ -282,13 +406,13 @@ export default function ContactPage() {
         .heroTitle {
           font-size: clamp(3rem, 10vw, 8rem);
           font-weight: 400;
-          color: #f5f5f0;
+          color: ${textColor};
           margin-bottom: 1.5rem;
           line-height: 0.95;
         }
         .heroSubtitle {
           font-size: clamp(1rem, 2vw, 1.25rem);
-          color: #737373;
+          color: ${mutedColor};
           max-width: 500px;
           font-weight: 300;
           letter-spacing: 0.05em;
@@ -307,13 +431,13 @@ export default function ContactPage() {
           font-size: 0.7rem;
           letter-spacing: 0.2em;
           text-transform: uppercase;
-          color: #737373;
+          color: ${mutedColor};
           writing-mode: vertical-rl;
         }
         .scrollLine {
           width: 1px;
           height: 60px;
-          background: #404040;
+          background: ${borderColor};
         }
         .main {
           padding: 8rem 4rem;
@@ -329,16 +453,16 @@ export default function ContactPage() {
           gap: 2rem;
           margin-bottom: 4rem;
           padding-bottom: 1.5rem;
-          border-bottom: 1px solid #262626;
+          border-bottom: 1px solid ${borderColor};
         }
         .sectionNumber {
           font-size: 0.9rem;
-          color: #737373;
+          color: ${mutedColor};
           font-style: italic;
         }
         .sectionTitle {
           font-size: clamp(2rem, 5vw, 3.5rem);
-          color: #f5f5f0;
+          color: ${textColor};
           font-weight: 400;
         }
         .profileSection {
@@ -369,7 +493,7 @@ export default function ContactPage() {
         }
         .profileText {
           font-size: 1.1rem;
-          color: #737373;
+          color: ${mutedColor};
           line-height: 1.8;
           margin-bottom: 2rem;
         }
@@ -390,69 +514,89 @@ export default function ContactPage() {
           font-weight: 500;
           letter-spacing: 0.15em;
           text-transform: uppercase;
-          color: #737373;
+          color: ${mutedColor};
           margin-bottom: 0.75rem;
         }
         .fieldInput {
           width: 100%;
           padding: 1rem 0;
           border: none;
-          border-bottom: 1px solid #262626;
+          border-bottom: 1px solid ${borderColor};
           background: transparent;
-          color: #e5e5e5;
+          color: ${textColor};
           font-size: 1rem;
           font-family: inherit;
           font-weight: 300;
-          transition: border-color 0.3s ease;
+          transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
         .fieldInput::placeholder {
-          color: #404040;
+          color: ${mutedColor};
+          opacity: 0.5;
         }
         .fieldInput:focus {
           outline: none;
           border-color: #c9a962;
+          box-shadow: 0 2px 0 0 #c9a962;
+        }
+        .fieldInputError {
+          border-color: #ef4444;
+        }
+        .fieldInputError:focus {
+          border-color: #ef4444;
+          box-shadow: 0 2px 0 0 #ef4444;
+        }
+        .fieldError {
+          font-size: 0.75rem;
+          color: #ef4444;
+          margin-top: 0.5rem;
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
         }
         .fieldSelect {
           width: 100%;
           padding: 1rem 0;
           border: none;
-          border-bottom: 1px solid #262626;
+          border-bottom: 1px solid ${borderColor};
           background: transparent;
-          color: #e5e5e5;
+          color: ${textColor};
           font-size: 1rem;
           font-family: inherit;
           font-weight: 300;
           cursor: pointer;
           appearance: none;
-          transition: border-color 0.3s ease;
+          transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
         .fieldSelect:focus {
           outline: none;
           border-color: #c9a962;
+          box-shadow: 0 2px 0 0 #c9a962;
         }
         .fieldSelect option {
-          background: #171717;
-          color: #e5e5e5;
+          background: ${cardBg};
+          color: ${textColor};
         }
         .fieldTextarea {
           width: 100%;
           padding: 1rem;
-          border: 1px solid #262626;
-          background: #141414;
-          color: #e5e5e5;
+          border: 1px solid ${borderColor};
+          background: ${inputBg};
+          color: ${textColor};
           font-size: 1rem;
           font-family: inherit;
           font-weight: 300;
           min-height: 120px;
           resize: vertical;
-          transition: border-color 0.3s ease;
+          transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
         .fieldTextarea::placeholder {
-          color: #404040;
+          color: ${mutedColor};
+          opacity: 0.5;
         }
         .fieldTextarea:focus {
           outline: none;
           border-color: #c9a962;
+          box-shadow: 0 0 0 1px #c9a962;
         }
         .optionGroup {
           display: flex;
@@ -465,20 +609,24 @@ export default function ContactPage() {
           gap: 0.75rem;
           cursor: pointer;
           font-size: 0.9rem;
-          color: #737373;
+          color: ${mutedColor};
           transition: color 0.3s ease;
         }
         .optionItem:hover {
-          color: #e5e5e5;
+          color: ${textColor};
         }
         .checkbox, .radio {
           appearance: none;
           width: 18px;
           height: 18px;
-          border: 1px solid #262626;
+          border: 1px solid ${borderColor};
           background: transparent;
           cursor: pointer;
           transition: all 0.3s ease;
+        }
+        .checkbox:focus, .radio:focus {
+          outline: 2px solid #c9a962;
+          outline-offset: 2px;
         }
         .radio {
           border-radius: 50%;
@@ -495,24 +643,34 @@ export default function ContactPage() {
         .actionBtn {
           padding: 0.75rem 1.5rem;
           background: transparent;
-          border: 1px solid #262626;
-          color: #737373;
+          border: 1px solid ${borderColor};
+          color: ${mutedColor};
           font-size: 0.75rem;
           font-weight: 500;
           letter-spacing: 0.1em;
           text-transform: uppercase;
           cursor: pointer;
-          transition: all 0.3s ease;
+          transition: all 0.3s ease, transform 0.2s ease;
         }
-        .actionBtn:hover {
-          background: #141414;
-          color: #e5e5e5;
-          border-color: #e5e5e5;
+        .actionBtn:hover:not(:disabled) {
+          background: ${cardBg};
+          color: ${textColor};
+          border-color: ${textColor};
+          transform: translateY(-1px);
+        }
+        .actionBtn:focus {
+          outline: 2px solid #c9a962;
+          outline-offset: 2px;
         }
         .actionBtnRecording {
           background: rgba(201, 169, 98, 0.1);
           border-color: #c9a962;
           color: #c9a962;
+          animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.7; }
         }
         .actionBtn:disabled {
           opacity: 0.5;
@@ -523,39 +681,99 @@ export default function ContactPage() {
           gap: 1.5rem;
           margin-top: 4rem;
           padding-top: 4rem;
-          border-top: 1px solid #262626;
+          border-top: 1px solid ${borderColor};
         }
         .btnPrimary {
           padding: 1.25rem 3rem;
-          background: #f5f5f0;
-          color: #0a0a0a;
+          background: ${darkMode ? '#f5f5f0' : '#171717'};
+          color: ${darkMode ? '#0a0a0a' : '#fafafa'};
           border: none;
           font-size: 0.8rem;
           font-weight: 500;
           letter-spacing: 0.15em;
           text-transform: uppercase;
           cursor: pointer;
-          transition: all 0.3s ease;
+          transition: all 0.3s ease, transform 0.2s ease;
+          position: relative;
+          overflow: hidden;
         }
-        .btnPrimary:hover {
+        .btnPrimary:hover:not(:disabled) {
           background: #c9a962;
           transform: translateY(-2px);
+        }
+        .btnPrimary:focus {
+          outline: 2px solid #c9a962;
+          outline-offset: 2px;
+        }
+        .btnPrimary:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
         }
         .btnSecondary {
           padding: 1.25rem 3rem;
           background: transparent;
-          color: #e5e5e5;
-          border: 1px solid #262626;
+          color: ${textColor};
+          border: 1px solid ${borderColor};
           font-size: 0.8rem;
           font-weight: 500;
           letter-spacing: 0.15em;
           text-transform: uppercase;
           cursor: pointer;
-          transition: all 0.3s ease;
+          transition: all 0.3s ease, transform 0.2s ease;
         }
         .btnSecondary:hover {
-          border-color: #e5e5e5;
-          background: #141414;
+          border-color: ${textColor};
+          background: ${cardBg};
+          transform: translateY(-1px);
+        }
+        .btnSecondary:focus {
+          outline: 2px solid #c9a962;
+          outline-offset: 2px;
+        }
+        .spinner {
+          display: inline-block;
+          width: 16px;
+          height: 16px;
+          border: 2px solid transparent;
+          border-top-color: currentColor;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+          margin-right: 0.5rem;
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        .successMessage {
+          margin-top: 4rem;
+          padding: 3rem;
+          border: 1px solid #22c55e;
+          background: rgba(34, 197, 94, 0.1);
+          text-align: center;
+        }
+        .successIcon {
+          width: 64px;
+          height: 64px;
+          margin: 0 auto 1.5rem;
+          background: #22c55e;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .successIcon svg {
+          width: 32px;
+          height: 32px;
+          color: white;
+        }
+        .successTitle {
+          font-size: 1.5rem;
+          color: #22c55e;
+          margin-bottom: 1rem;
+          font-weight: 400;
+        }
+        .successText {
+          color: ${mutedColor};
+          margin-bottom: 2rem;
         }
         .result {
           margin-top: 4rem;
@@ -584,11 +802,11 @@ export default function ContactPage() {
           font-weight: 500;
           letter-spacing: 0.15em;
           text-transform: uppercase;
-          color: #737373;
+          color: ${mutedColor};
         }
         .resultValue {
           font-size: 1rem;
-          color: #e5e5e5;
+          color: ${textColor};
         }
         .dbStatus {
           text-align: center;
@@ -600,23 +818,25 @@ export default function ContactPage() {
           margin-top: 2rem;
         }
         .dbStatusSuccess {
-          color: #c9a962;
-          border: 1px solid #c9a962;
+          color: #22c55e;
+          border: 1px solid #22c55e;
+          background: rgba(34, 197, 94, 0.05);
         }
         .dbStatusError {
           color: #ef4444;
           border: 1px solid #ef4444;
+          background: rgba(239, 68, 68, 0.05);
         }
         .counterSection {
           display: flex;
           align-items: center;
           justify-content: space-between;
           padding: 3rem;
-          border: 1px solid #262626;
+          border: 1px solid ${borderColor};
         }
         .counterTitle {
           font-size: 1.25rem;
-          color: #737373;
+          color: ${mutedColor};
         }
         .counter {
           display: flex;
@@ -630,15 +850,20 @@ export default function ContactPage() {
           align-items: center;
           justify-content: center;
           background: transparent;
-          border: 1px solid #262626;
-          color: #e5e5e5;
+          border: 1px solid ${borderColor};
+          color: ${textColor};
           font-size: 1.5rem;
           cursor: pointer;
-          transition: all 0.3s ease;
+          transition: all 0.3s ease, transform 0.2s ease;
         }
         .counterBtn:hover {
-          background: #141414;
-          border-color: #e5e5e5;
+          background: ${cardBg};
+          border-color: ${textColor};
+          transform: scale(1.05);
+        }
+        .counterBtn:focus {
+          outline: 2px solid #c9a962;
+          outline-offset: 2px;
         }
         .counterValue {
           font-size: 3rem;
@@ -661,28 +886,28 @@ export default function ContactPage() {
           display: flex;
         }
         .modal {
-          background: #171717;
-          border: 1px solid #262626;
+          background: ${cardBg};
+          border: 1px solid ${borderColor};
           padding: 4rem;
           max-width: 500px;
           width: 90%;
         }
         .modalTitle {
           font-size: 2rem;
-          color: #f5f5f0;
+          color: ${textColor};
           margin-bottom: 1.5rem;
           font-weight: 400;
         }
         .modalText {
           font-size: 1rem;
-          color: #737373;
+          color: ${mutedColor};
           line-height: 1.8;
           margin-bottom: 2.5rem;
         }
         .modalClose {
           padding: 1rem 2.5rem;
-          background: #f5f5f0;
-          color: #0a0a0a;
+          background: ${darkMode ? '#f5f5f0' : '#171717'};
+          color: ${darkMode ? '#0a0a0a' : '#fafafa'};
           border: none;
           font-size: 0.75rem;
           font-weight: 500;
@@ -694,17 +919,32 @@ export default function ContactPage() {
         .modalClose:hover {
           background: #c9a962;
         }
+        .modalClose:focus {
+          outline: 2px solid #c9a962;
+          outline-offset: 2px;
+        }
         .footer {
           padding: 4rem;
-          border-top: 1px solid #262626;
+          border-top: 1px solid ${borderColor};
           display: flex;
           justify-content: space-between;
           align-items: center;
         }
         .footerText {
           font-size: 0.8rem;
-          color: #737373;
+          color: ${mutedColor};
           letter-spacing: 0.05em;
+        }
+        .srOnly {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          padding: 0;
+          margin: -1px;
+          overflow: hidden;
+          clip: rect(0, 0, 0, 0);
+          white-space: nowrap;
+          border: 0;
         }
         @media (max-width: 1024px) {
           .profileSection {
@@ -722,6 +962,9 @@ export default function ContactPage() {
           }
           .nav {
             padding: 1.5rem 2rem;
+          }
+          .navLeft {
+            gap: 1rem;
           }
           .main {
             padding: 4rem 2rem;
@@ -749,20 +992,30 @@ export default function ContactPage() {
       `}</style>
 
       {/* Navigation */}
-      <nav className="nav">
-        <Link href="/" className="logo" style={{ color: '#ffffff', textDecoration: 'none' }}>STUDIO</Link>
-        <Link href="/users" className="navLink" style={{ color: '#ffffff', textDecoration: 'none' }}>View Contacts</Link>
+      <nav className="nav" role="navigation" aria-label="Main navigation">
+        <div className="navLeft">
+          <Link href="/" className="logo" style={{ color: darkMode ? '#ffffff' : '#171717', textDecoration: 'none' }}>STUDIO</Link>
+          <button 
+            className="themeToggle" 
+            onClick={() => setDarkMode(!darkMode)}
+            aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {darkMode ? 'Light' : 'Dark'}
+          </button>
+        </div>
+        <Link href="/users" className="navLink" style={{ color: darkMode ? '#ffffff' : '#171717', textDecoration: 'none' }}>View Contacts</Link>
       </nav>
 
       {/* Hero Section */}
-      <section className="hero">
+      <section className="hero" aria-label="Welcome section">
         <div className="heroBackground">
           <Image
             src="/images/hero.jpg"
-            alt="Abstract flowing fabric"
+            alt=""
             fill
             priority
             className="heroImage"
+            aria-hidden="true"
           />
           <div className="heroOverlay" />
         </div>
@@ -772,27 +1025,28 @@ export default function ContactPage() {
             We would love to hear from you. Let us create something beautiful together.
           </p>
         </div>
-        <div className="scrollIndicator">
+        <div className="scrollIndicator" aria-hidden="true">
           <span className="scrollText">Scroll</span>
           <div className="scrollLine" />
         </div>
       </section>
 
       {/* Main Content */}
-      <main className="main">
+      <main className="main" id="main-content">
         {/* Profile Section */}
-        <section className="section">
+        <section className="section" aria-labelledby="about-title">
           <div className="sectionHeader">
-            <span className="sectionNumber">01</span>
-            <h2 className="sectionTitle">About</h2>
+            <span className="sectionNumber" aria-hidden="true">01</span>
+            <h2 className="sectionTitle" id="about-title">About</h2>
           </div>
           <div className="profileSection">
             <div className="profileImageWrapper">
               <Image
                 src="/images/profile.jpg"
-                alt="Professional profile"
+                alt="Professional profile photograph"
                 fill
                 className="profileImage"
+                sizes="(max-width: 1024px) 100vw, 50vw"
               />
             </div>
             <div className="profileContent">
@@ -811,38 +1065,72 @@ export default function ContactPage() {
         </section>
 
         {/* Contact Form Section */}
-        <section className="section">
+        <section className="section" aria-labelledby="contact-title">
           <div className="sectionHeader">
-            <span className="sectionNumber">02</span>
-            <h2 className="sectionTitle">Contact</h2>
+            <span className="sectionNumber" aria-hidden="true">02</span>
+            <h2 className="sectionTitle" id="contact-title">Contact</h2>
           </div>
           
-          <form onSubmit={handleSubmit} noValidate>
+          <form onSubmit={handleSubmit} noValidate aria-label="Contact form">
             <div className="formGrid">
               <div className="field">
-                <label htmlFor="name" className="fieldLabel">Full Name</label>
+                <label htmlFor="name" className="fieldLabel">
+                  Full Name <span aria-hidden="true">*</span>
+                  <span className="srOnly">(required)</span>
+                </label>
                 <input
                   type="text"
                   id="name"
                   placeholder="John Doe"
                   autoComplete="name"
-                  className="fieldInput"
+                  className={`fieldInput ${errors.name ? 'fieldInputError' : ''}`}
                   value={form.name}
                   onChange={e => updateField('name', e.target.value)}
+                  onBlur={() => handleBlur('name')}
+                  aria-required="true"
+                  aria-invalid={errors.name ? 'true' : 'false'}
+                  aria-describedby={errors.name ? 'name-error' : undefined}
                 />
+                {errors.name && (
+                  <p className="fieldError" id="name-error" role="alert">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="12" y1="8" x2="12" y2="12"/>
+                      <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    {errors.name}
+                  </p>
+                )}
               </div>
 
               <div className="field">
-                <label htmlFor="email" className="fieldLabel">Email</label>
+                <label htmlFor="email" className="fieldLabel">
+                  Email <span aria-hidden="true">*</span>
+                  <span className="srOnly">(required)</span>
+                </label>
                 <input
                   type="email"
                   id="email"
                   placeholder="john@example.com"
                   autoComplete="email"
-                  className="fieldInput"
+                  className={`fieldInput ${errors.email ? 'fieldInputError' : ''}`}
                   value={form.email}
                   onChange={e => updateField('email', e.target.value)}
+                  onBlur={() => handleBlur('email')}
+                  aria-required="true"
+                  aria-invalid={errors.email ? 'true' : 'false'}
+                  aria-describedby={errors.email ? 'email-error' : undefined}
                 />
+                {errors.email && (
+                  <p className="fieldError" id="email-error" role="alert">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="12" y1="8" x2="12" y2="12"/>
+                      <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    {errors.email}
+                  </p>
+                )}
               </div>
 
               <div className="field">
@@ -885,9 +1173,9 @@ export default function ContactPage() {
                 </select>
               </div>
 
-              <div className="field">
-                <label className="fieldLabel">Interests</label>
-                <div className="optionGroup">
+              <fieldset className="field" style={{ border: 'none', padding: 0, margin: 0 }}>
+                <legend className="fieldLabel">Interests</legend>
+                <div className="optionGroup" role="group" aria-label="Select your interests">
                   {INTERESTS.map(i => (
                     <label key={i.value} className="optionItem">
                       <input
@@ -896,16 +1184,17 @@ export default function ContactPage() {
                         className="checkbox"
                         checked={form.interests.includes(i.value)}
                         onChange={e => handleInterestChange(i.value, e.target.checked)}
+                        aria-label={i.label}
                       />
                       {i.label}
                     </label>
                   ))}
                 </div>
-              </div>
+              </fieldset>
 
-              <div className="field formGridFull">
-                <label className="fieldLabel">Preferred Contact Method</label>
-                <div className="optionGroup">
+              <fieldset className="field formGridFull" style={{ border: 'none', padding: 0, margin: 0 }}>
+                <legend className="fieldLabel">Preferred Contact Method</legend>
+                <div className="optionGroup" role="radiogroup" aria-label="Select preferred contact method">
                   {CONTACT_METHODS.map(m => (
                     <label key={m.value} className="optionItem">
                       <input
@@ -916,12 +1205,13 @@ export default function ContactPage() {
                         value={m.value}
                         checked={form.contact === m.value}
                         onChange={e => updateField('contact', e.target.value)}
+                        aria-label={m.label}
                       />
                       {m.label}
                     </label>
                   ))}
                 </div>
-              </div>
+              </fieldset>
 
               <div className="field formGridFull">
                 <label htmlFor="message" className="fieldLabel">Message</label>
@@ -942,12 +1232,18 @@ export default function ContactPage() {
                   className="fieldTextarea"
                   value={form.notes}
                   onChange={e => updateField('notes', e.target.value)}
+                  aria-describedby="notes-help"
                 />
+                <p id="notes-help" className="srOnly">
+                  You can use the dictate button to speak your notes or the AI auto-fill button to automatically fill the form
+                </p>
                 <div className="notesActions">
                   <button
                     type="button"
                     className={`actionBtn ${isRecording ? 'actionBtnRecording' : ''}`}
                     onClick={handleDictate}
+                    aria-label={isRecording ? 'Stop voice recording' : 'Start voice dictation'}
+                    aria-pressed={isRecording}
                   >
                     {isRecording ? 'Stop Recording' : 'Dictate'}
                   </button>
@@ -956,22 +1252,55 @@ export default function ContactPage() {
                     className="actionBtn"
                     disabled={isAiFilling}
                     onClick={handleAiFill}
+                    aria-label="Use AI to automatically fill form fields based on notes"
+                    aria-busy={isAiFilling}
                   >
-                    {isAiFilling ? 'Processing...' : 'AI Auto-Fill'}
+                    {isAiFilling ? (
+                      <>
+                        <span className="spinner" aria-hidden="true"></span>
+                        Processing...
+                      </>
+                    ) : 'AI Auto-Fill'}
                   </button>
                 </div>
               </div>
             </div>
 
             <div className="formActions">
-              <button type="submit" className="btnPrimary">Submit</button>
+              <button 
+                type="submit" 
+                className="btnPrimary" 
+                disabled={isSubmitting}
+                aria-busy={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <span className="spinner" aria-hidden="true"></span>
+                    Submitting...
+                  </>
+                ) : 'Submit'}
+              </button>
               <button type="button" className="btnSecondary" onClick={handleReset}>Reset</button>
               <button type="button" className="btnSecondary" onClick={() => setModalOpen(true)}>Open Modal</button>
             </div>
           </form>
 
+          {/* Success State */}
+          {showSuccess && (
+            <div className="successMessage" role="status" aria-live="polite">
+              <div className="successIcon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </div>
+              <h3 className="successTitle">Thank You!</h3>
+              <p className="successText">Your message has been sent successfully. We will get back to you soon.</p>
+              <button type="button" className="btnSecondary" onClick={handleReset}>Send Another Message</button>
+            </div>
+          )}
+
           {/* Result */}
-          {result && (
+          {result && !showSuccess && (
             <div className="result" role="region" aria-label="Submitted data">
               <h3 className="resultTitle">Submitted Information</h3>
               <div className="resultGrid">
@@ -1017,34 +1346,38 @@ export default function ContactPage() {
 
           {/* DB Status */}
           {dbStatus && (
-            <p className={`dbStatus ${dbStatus.isError ? 'dbStatusError' : 'dbStatusSuccess'}`}>
+            <p 
+              className={`dbStatus ${dbStatus.isError ? 'dbStatusError' : 'dbStatusSuccess'}`}
+              role="status"
+              aria-live="polite"
+            >
               {dbStatus.message}
             </p>
           )}
         </section>
 
         {/* Counter Section */}
-        <section className="section">
+        <section className="section" aria-labelledby="interaction-title">
           <div className="sectionHeader">
-            <span className="sectionNumber">03</span>
-            <h2 className="sectionTitle">Interaction</h2>
+            <span className="sectionNumber" aria-hidden="true">03</span>
+            <h2 className="sectionTitle" id="interaction-title">Interaction</h2>
           </div>
           <div className="counterSection">
             <span className="counterTitle">Counter Test Widget</span>
-            <div className="counter">
+            <div className="counter" role="group" aria-label="Counter controls">
               <button
                 className="counterBtn"
                 type="button"
-                aria-label="Decrease"
+                aria-label="Decrease counter"
                 onClick={() => setCount(c => c - 1)}
               >
                 -
               </button>
-              <span className="counterValue">{count}</span>
+              <span className="counterValue" aria-live="polite" aria-atomic="true">{count}</span>
               <button
                 className="counterBtn"
                 type="button"
-                aria-label="Increase"
+                aria-label="Increase counter"
                 onClick={() => setCount(c => c + 1)}
               >
                 +
@@ -1055,7 +1388,7 @@ export default function ContactPage() {
       </main>
 
       {/* Footer */}
-      <footer className="footer">
+      <footer className="footer" role="contentinfo">
         <span className="footerText">Test Page for Web Automation</span>
         <span className="footerText">Built with Next.js & Supabase</span>
       </footer>
@@ -1066,6 +1399,7 @@ export default function ContactPage() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
+        aria-hidden={!modalOpen}
         onClick={e => { if (e.target === e.currentTarget) setModalOpen(false); }}
       >
         <div className="modal">
