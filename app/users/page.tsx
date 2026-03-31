@@ -16,7 +16,7 @@ interface Contact {
 }
 
 const countryMap: Record<string, string> = {
-  no: 'Norge', se: 'Sverige', dk: 'Danmark', fi: 'Finland', other: 'Annet',
+  no: 'Norway', se: 'Sweden', dk: 'Denmark', fi: 'Finland', other: 'Other',
 };
 
 export default function UsersPage() {
@@ -34,7 +34,7 @@ export default function UsersPage() {
       setLoading(false);
 
       if (error) {
-        setError('Feil: ' + error.message);
+        setError('Error: ' + error.message);
         return;
       }
 
@@ -44,59 +44,87 @@ export default function UsersPage() {
   }, []);
 
   return (
-    <>
-      <header>
-        <h1>Alle kontakter</h1>
-        <p>Kontakter lagret i Supabase</p>
-        <nav style={{ marginTop: '0.8rem' }}>
-          <Link href="/" className={styles.navLink}>&larr; Tilbake til skjema</Link>
-        </nav>
+    <div className={styles.page}>
+      {/* Navigation */}
+      <nav className={styles.nav}>
+        <Link href="/" className={styles.logo}>STUDIO</Link>
+        <Link href="/" className={styles.navLink}>Back to Form</Link>
+      </nav>
+
+      {/* Header */}
+      <header className={styles.header}>
+        <div className={styles.headerContent}>
+          <span className={styles.headerNumber}>Archive</span>
+          <h1 className={styles.headerTitle}>All Contacts</h1>
+          <p className={styles.headerSubtitle}>
+            Contacts stored in Supabase database
+          </p>
+        </div>
       </header>
 
-      <div className={`card ${styles.wideCard}`}>
-        <h2>Kontaktliste</h2>
-
-        {loading && <div className={`${styles.statusMsg} ${styles.muted}`}>Laster kontakter...</div>}
-        {error && <div className={`${styles.statusMsg} ${styles.error}`}>{error}</div>}
+      {/* Main Content */}
+      <main className={styles.main}>
+        {loading && (
+          <div className={styles.statusMsg}>
+            <span className={styles.statusText}>Loading contacts...</span>
+          </div>
+        )}
+        
+        {error && (
+          <div className={`${styles.statusMsg} ${styles.statusError}`}>
+            <span className={styles.statusText}>{error}</span>
+          </div>
+        )}
+        
         {!loading && !error && contacts.length === 0 && (
-          <div className={`${styles.statusMsg} ${styles.muted}`}>Ingen kontakter funnet.</div>
+          <div className={styles.statusMsg}>
+            <span className={styles.statusText}>No contacts found</span>
+          </div>
         )}
 
         {contacts.length > 0 && (
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Navn</th>
-                <th>E-post</th>
-                <th>By</th>
-                <th>Land</th>
-                <th>Interesser</th>
-                <th>Notater</th>
-                <th>Opprettet</th>
-              </tr>
-            </thead>
-            <tbody>
-              {contacts.map((c, i) => {
-                const date = new Date(c.created_at).toLocaleString('no-NO', {
-                  day: '2-digit', month: '2-digit', year: 'numeric',
-                  hour: '2-digit', minute: '2-digit',
-                });
-                return (
-                  <tr key={i}>
-                    <td>{c.name}</td>
-                    <td>{c.email}</td>
-                    <td>{c.city || '—'}</td>
-                    <td>{countryMap[c.country || ''] || c.country || '—'}</td>
-                    <td>{c.interests ? c.interests.join(', ') : '—'}</td>
-                    <td>{c.notes || '—'}</td>
-                    <td>{date}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className={styles.tableWrapper}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>City</th>
+                  <th>Country</th>
+                  <th>Interests</th>
+                  <th>Notes</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contacts.map((c, i) => {
+                  const date = new Date(c.created_at).toLocaleString('en-US', {
+                    day: '2-digit', month: 'short', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit',
+                  });
+                  return (
+                    <tr key={i}>
+                      <td>{c.name}</td>
+                      <td>{c.email}</td>
+                      <td>{c.city || '—'}</td>
+                      <td>{countryMap[c.country || ''] || c.country || '—'}</td>
+                      <td>{c.interests ? c.interests.join(', ') : '—'}</td>
+                      <td className={styles.notesCell}>{c.notes || '—'}</td>
+                      <td>{date}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
-      </div>
-    </>
+      </main>
+
+      {/* Footer */}
+      <footer className={styles.footer}>
+        <span className={styles.footerText}>Test Page for Web Automation</span>
+        <span className={styles.footerText}>Built with Next.js & Supabase</span>
+      </footer>
+    </div>
   );
 }

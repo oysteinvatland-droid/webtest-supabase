@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { getSupabase } from '@/lib/supabase';
 import styles from './page.module.css';
 
@@ -35,25 +36,25 @@ const INITIAL_FORM: FormData = {
 };
 
 const COUNTRY_OPTIONS = [
-  { value: '', label: '— Velg land —' },
-  { value: 'no', label: 'Norge' },
-  { value: 'se', label: 'Sverige' },
-  { value: 'dk', label: 'Danmark' },
+  { value: '', label: 'Select Country' },
+  { value: 'no', label: 'Norway' },
+  { value: 'se', label: 'Sweden' },
+  { value: 'dk', label: 'Denmark' },
   { value: 'fi', label: 'Finland' },
-  { value: 'other', label: 'Annet' },
+  { value: 'other', label: 'Other' },
 ];
 
 const INTERESTS = [
-  { value: 'teknologi', label: 'Teknologi', id: 'cb-tech' },
-  { value: 'musikk', label: 'Musikk', id: 'cb-music' },
+  { value: 'teknologi', label: 'Technology', id: 'cb-tech' },
+  { value: 'musikk', label: 'Music', id: 'cb-music' },
   { value: 'sport', label: 'Sport', id: 'cb-sport' },
-  { value: 'reise', label: 'Reise', id: 'cb-travel' },
+  { value: 'reise', label: 'Travel', id: 'cb-travel' },
 ];
 
 const CONTACT_METHODS = [
-  { value: 'email', label: 'E-post', id: 'radio-email' },
-  { value: 'phone', label: 'Telefon', id: 'radio-phone' },
-  { value: 'none', label: 'Ingen kontakt', id: 'radio-none' },
+  { value: 'email', label: 'Email', id: 'radio-email' },
+  { value: 'phone', label: 'Phone', id: 'radio-phone' },
+  { value: 'none', label: 'No Contact', id: 'radio-none' },
 ];
 
 export default function ContactPage() {
@@ -113,9 +114,9 @@ export default function ContactPage() {
     });
 
     if (error) {
-      setDbStatus({ message: 'Feil ved lagring: ' + error.message, isError: true });
+      setDbStatus({ message: 'Error saving: ' + error.message, isError: true });
     } else {
-      setDbStatus({ message: 'Lagret til database!', isError: false });
+      setDbStatus({ message: 'Successfully saved to database', isError: false });
     }
     setTimeout(() => setDbStatus(null), 4000);
   };
@@ -127,7 +128,7 @@ export default function ContactPage() {
 
   const handleAiFill = async () => {
     if (!form.notes.trim()) {
-      alert('Skriv eller dikter tekst i notatfeltet først.');
+      alert('Please write or dictate text in the notes field first.');
       return;
     }
 
@@ -141,7 +142,7 @@ export default function ContactPage() {
 
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({}));
-        throw new Error(err.error || 'API-feil: ' + resp.status);
+        throw new Error(err.error || 'API Error: ' + resp.status);
       }
 
       const data = await resp.json();
@@ -158,7 +159,7 @@ export default function ContactPage() {
         message: data.message || prev.message,
       }));
     } catch (err) {
-      alert('Kunne ikke tolke teksten: ' + (err instanceof Error ? err.message : 'Ukjent feil'));
+      alert('Could not interpret text: ' + (err instanceof Error ? err.message : 'Unknown error'));
     } finally {
       setIsAiFilling(false);
     }
@@ -209,163 +210,338 @@ export default function ContactPage() {
   };
 
   return (
-    <>
-      <header>
-        <h1>Claude Web Plugin Test Page</h1>
-        <p>Testside for v0, Playwright og Claude web-plugins</p>
-        <nav style={{ marginTop: '0.8rem' }}>
-          <Link href="/users" className={styles.navLink}>Vis alle kontakter &rarr;</Link>
-        </nav>
-      </header>
+    <div className={styles.page}>
+      {/* Navigation */}
+      <nav className={styles.nav}>
+        <Link href="/" className={styles.logo}>STUDIO</Link>
+        <Link href="/users" className={styles.navLink}>View Contacts</Link>
+      </nav>
 
-      {/* Image */}
-      <div className={`card ${styles.imageSection}`}>
-        <h2>Profilbilde</h2>
-        <img
-          className={styles.profileImage}
-          src="https://picsum.photos/seed/claude-test/200/200"
-          alt="Eksempelbilde av en person"
-        />
-      </div>
+      {/* Hero Section */}
+      <section className={styles.hero}>
+        <div className={styles.heroBackground}>
+          <Image
+            src="/images/hero.jpg"
+            alt="Abstract flowing fabric"
+            fill
+            priority
+            className={styles.heroImage}
+          />
+          <div className={styles.heroOverlay} />
+        </div>
+        <div className={styles.heroContent}>
+          <h1 className={styles.heroTitle}>Get in Touch</h1>
+          <p className={styles.heroSubtitle}>
+            We would love to hear from you. Let us create something beautiful together.
+          </p>
+        </div>
+        <div className={styles.scrollIndicator}>
+          <span className={styles.scrollText}>Scroll</span>
+          <div className={styles.scrollLine} />
+        </div>
+      </section>
 
-      {/* Form */}
-      <div className="card">
-        <form onSubmit={handleSubmit} noValidate>
-          <h2>Kontaktinformasjon</h2>
-
-          <div className={styles.field}>
-            <label htmlFor="name">Fullt navn</label>
-            <input type="text" id="name" placeholder="Ola Nordmann" autoComplete="name"
-              value={form.name} onChange={e => updateField('name', e.target.value)} />
+      {/* Main Content */}
+      <main className={styles.main}>
+        {/* Profile Section */}
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <span className={styles.sectionNumber}>01</span>
+            <h2 className={styles.sectionTitle}>About</h2>
           </div>
-
-          <div className={styles.field}>
-            <label htmlFor="email">E-post</label>
-            <input type="email" id="email" placeholder="ola@example.com" autoComplete="email"
-              value={form.email} onChange={e => updateField('email', e.target.value)} />
-          </div>
-
-          <div className={styles.field}>
-            <label htmlFor="address">Gateadresse</label>
-            <input type="text" id="address" placeholder="Storgata 1" autoComplete="street-address"
-              value={form.address} onChange={e => updateField('address', e.target.value)} />
-          </div>
-
-          <div className={styles.field}>
-            <label htmlFor="city">By</label>
-            <input type="text" id="city" placeholder="Oslo" autoComplete="address-level2"
-              value={form.city} onChange={e => updateField('city', e.target.value)} />
-          </div>
-
-          <div className={styles.field}>
-            <label htmlFor="country">Land</label>
-            <select id="country" value={form.country} onChange={e => updateField('country', e.target.value)}>
-              {COUNTRY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          </div>
-
-          <div className={styles.field}>
-            <label>Interesser</label>
-            <div className={styles.checkGroup}>
-              {INTERESTS.map(i => (
-                <label key={i.value} className={styles.checkItem}>
-                  <input type="checkbox" id={i.id} checked={form.interests.includes(i.value)}
-                    onChange={e => handleInterestChange(i.value, e.target.checked)} />
-                  {i.label}
-                </label>
-              ))}
+          <div className={styles.profileSection}>
+            <div className={styles.profileImageWrapper}>
+              <Image
+                src="/images/profile.jpg"
+                alt="Professional profile"
+                fill
+                className={styles.profileImage}
+              />
+              <div className={styles.profileImageOverlay} />
+            </div>
+            <div className={styles.profileContent}>
+              <p className={styles.profileText}>
+                This is a test page designed for web automation tools like Playwright 
+                and Claude web plugins. The form below demonstrates various input types, 
+                validation patterns, and modern UI interactions.
+              </p>
+              <p className={styles.profileText}>
+                Fill out the contact form to submit your information. You can also use 
+                the dictation feature to speak your notes, or let AI interpret and 
+                auto-fill the form fields.
+              </p>
             </div>
           </div>
+        </section>
 
-          <div className={styles.field}>
-            <label>Foretrukket kontakt</label>
-            <div className={styles.checkGroup}>
-              {CONTACT_METHODS.map(m => (
-                <label key={m.value} className={styles.checkItem}>
-                  <input type="radio" name="contact" id={m.id} value={m.value}
-                    checked={form.contact === m.value}
-                    onChange={e => updateField('contact', e.target.value)} />
-                  {m.label}
-                </label>
-              ))}
+        {/* Contact Form Section */}
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <span className={styles.sectionNumber}>02</span>
+            <h2 className={styles.sectionTitle}>Contact</h2>
+          </div>
+          
+          <form onSubmit={handleSubmit} noValidate>
+            <div className={styles.formGrid}>
+              <div className={styles.field}>
+                <label htmlFor="name" className={styles.fieldLabel}>Full Name</label>
+                <input
+                  type="text"
+                  id="name"
+                  placeholder="John Doe"
+                  autoComplete="name"
+                  className={styles.fieldInput}
+                  value={form.name}
+                  onChange={e => updateField('name', e.target.value)}
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label htmlFor="email" className={styles.fieldLabel}>Email</label>
+                <input
+                  type="email"
+                  id="email"
+                  placeholder="john@example.com"
+                  autoComplete="email"
+                  className={styles.fieldInput}
+                  value={form.email}
+                  onChange={e => updateField('email', e.target.value)}
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label htmlFor="address" className={styles.fieldLabel}>Street Address</label>
+                <input
+                  type="text"
+                  id="address"
+                  placeholder="123 Main Street"
+                  autoComplete="street-address"
+                  className={styles.fieldInput}
+                  value={form.address}
+                  onChange={e => updateField('address', e.target.value)}
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label htmlFor="city" className={styles.fieldLabel}>City</label>
+                <input
+                  type="text"
+                  id="city"
+                  placeholder="Oslo"
+                  autoComplete="address-level2"
+                  className={styles.fieldInput}
+                  value={form.city}
+                  onChange={e => updateField('city', e.target.value)}
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label htmlFor="country" className={styles.fieldLabel}>Country</label>
+                <select
+                  id="country"
+                  className={styles.fieldSelect}
+                  value={form.country}
+                  onChange={e => updateField('country', e.target.value)}
+                >
+                  {COUNTRY_OPTIONS.map(o => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.fieldLabel}>Interests</label>
+                <div className={styles.optionGroup}>
+                  {INTERESTS.map(i => (
+                    <label key={i.value} className={styles.optionItem}>
+                      <input
+                        type="checkbox"
+                        id={i.id}
+                        checked={form.interests.includes(i.value)}
+                        onChange={e => handleInterestChange(i.value, e.target.checked)}
+                      />
+                      {i.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className={`${styles.field} ${styles.formGridFull}`}>
+                <label className={styles.fieldLabel}>Preferred Contact Method</label>
+                <div className={styles.optionGroup}>
+                  {CONTACT_METHODS.map(m => (
+                    <label key={m.value} className={styles.optionItem}>
+                      <input
+                        type="radio"
+                        name="contact"
+                        id={m.id}
+                        value={m.value}
+                        checked={form.contact === m.value}
+                        onChange={e => updateField('contact', e.target.value)}
+                      />
+                      {m.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className={`${styles.field} ${styles.formGridFull}`}>
+                <label htmlFor="message" className={styles.fieldLabel}>Message</label>
+                <textarea
+                  id="message"
+                  placeholder="Write your message here..."
+                  className={styles.fieldTextarea}
+                  value={form.message}
+                  onChange={e => updateField('message', e.target.value)}
+                />
+              </div>
+
+              <div className={`${styles.field} ${styles.formGridFull} ${styles.notesField}`}>
+                <label htmlFor="notes" className={styles.fieldLabel}>Notes</label>
+                <textarea
+                  id="notes"
+                  placeholder="Dictate or write notes here..."
+                  className={styles.fieldTextarea}
+                  value={form.notes}
+                  onChange={e => updateField('notes', e.target.value)}
+                />
+                <div className={styles.notesActions}>
+                  <button
+                    type="button"
+                    className={`${styles.actionBtn} ${isRecording ? styles.actionBtnRecording : ''}`}
+                    onClick={handleDictate}
+                  >
+                    {isRecording ? 'Stop Recording' : 'Dictate'}
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.actionBtn}
+                    disabled={isAiFilling}
+                    onClick={handleAiFill}
+                  >
+                    {isAiFilling ? 'Processing...' : 'AI Auto-Fill'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.formActions}>
+              <button type="submit" className={styles.btnPrimary}>Submit</button>
+              <button type="button" className={styles.btnSecondary} onClick={handleReset}>Reset</button>
+              <button type="button" className={styles.btnSecondary} onClick={() => setModalOpen(true)}>Open Modal</button>
+            </div>
+          </form>
+
+          {/* Result */}
+          {result && (
+            <div className={styles.result} role="region" aria-label="Submitted data">
+              <h3 className={styles.resultTitle}>Submitted Information</h3>
+              <div className={styles.resultGrid}>
+                <div className={styles.resultItem}>
+                  <span className={styles.resultLabel}>Name</span>
+                  <span className={styles.resultValue}>{result.name}</span>
+                </div>
+                <div className={styles.resultItem}>
+                  <span className={styles.resultLabel}>Email</span>
+                  <span className={styles.resultValue}>{result.email}</span>
+                </div>
+                <div className={styles.resultItem}>
+                  <span className={styles.resultLabel}>Address</span>
+                  <span className={styles.resultValue}>{result.address}</span>
+                </div>
+                <div className={styles.resultItem}>
+                  <span className={styles.resultLabel}>City</span>
+                  <span className={styles.resultValue}>{result.city}</span>
+                </div>
+                <div className={styles.resultItem}>
+                  <span className={styles.resultLabel}>Country</span>
+                  <span className={styles.resultValue}>{result.country}</span>
+                </div>
+                <div className={styles.resultItem}>
+                  <span className={styles.resultLabel}>Interests</span>
+                  <span className={styles.resultValue}>{result.interests}</span>
+                </div>
+                <div className={styles.resultItem}>
+                  <span className={styles.resultLabel}>Contact</span>
+                  <span className={styles.resultValue}>{result.contact}</span>
+                </div>
+                <div className={styles.resultItem}>
+                  <span className={styles.resultLabel}>Message</span>
+                  <span className={styles.resultValue}>{result.message}</span>
+                </div>
+                <div className={styles.resultItem}>
+                  <span className={styles.resultLabel}>Notes</span>
+                  <span className={styles.resultValue}>{result.notes}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* DB Status */}
+          {dbStatus && (
+            <p className={`${styles.dbStatus} ${dbStatus.isError ? styles.dbStatusError : styles.dbStatusSuccess}`}>
+              {dbStatus.message}
+            </p>
+          )}
+        </section>
+
+        {/* Counter Section */}
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <span className={styles.sectionNumber}>03</span>
+            <h2 className={styles.sectionTitle}>Interaction</h2>
+          </div>
+          <div className={styles.counterSection}>
+            <span className={styles.counterTitle}>Counter Test Widget</span>
+            <div className={styles.counter}>
+              <button
+                className={styles.counterBtn}
+                type="button"
+                aria-label="Decrease"
+                onClick={() => setCount(c => c - 1)}
+              >
+                -
+              </button>
+              <span className={styles.counterValue}>{count}</span>
+              <button
+                className={styles.counterBtn}
+                type="button"
+                aria-label="Increase"
+                onClick={() => setCount(c => c + 1)}
+              >
+                +
+              </button>
             </div>
           </div>
+        </section>
+      </main>
 
-          <div className={styles.field}>
-            <label htmlFor="message">Melding</label>
-            <textarea id="message" placeholder="Skriv en valgfri melding..."
-              value={form.message} onChange={e => updateField('message', e.target.value)} />
-          </div>
-
-          <div className={`${styles.field} ${styles.notesField}`}>
-            <label htmlFor="notes">Notater</label>
-            <textarea id="notes" placeholder="Dikter eller skriv notater..."
-              value={form.notes} onChange={e => updateField('notes', e.target.value)} />
-            <button type="button" className={isRecording ? styles.dictateBtnRecording : styles.dictateBtn}
-              onClick={handleDictate}>
-              {isRecording ? '⏹ Stopp' : '🎤 Dikter'}
-            </button>
-            <button type="button" className={styles.aiFillBtn} disabled={isAiFilling}
-              onClick={handleAiFill}>
-              {isAiFilling ? '⏳ Tolker...' : '🤖 AI Fyll'}
-            </button>
-          </div>
-
-          <div className={styles.buttons}>
-            <button type="submit" className={styles.submitBtn}>Send</button>
-            <button type="button" className={styles.resetBtn} onClick={handleReset}>Tilbakestill</button>
-            <button type="button" className={styles.modalBtn} onClick={() => setModalOpen(true)}>Åpne modal</button>
-          </div>
-        </form>
-      </div>
-
-      {/* Result */}
-      {result && (
-        <div className={styles.result} role="region" aria-label="Innsendte data">
-          <h2>Innsendt informasjon</h2>
-          <dl className={styles.resultGrid}>
-            <dt>Navn:</dt><dd>{result.name}</dd>
-            <dt>E-post:</dt><dd>{result.email}</dd>
-            <dt>Adresse:</dt><dd>{result.address}</dd>
-            <dt>By:</dt><dd>{result.city}</dd>
-            <dt>Land:</dt><dd>{result.country}</dd>
-            <dt>Interesser:</dt><dd>{result.interests}</dd>
-            <dt>Kontakt:</dt><dd>{result.contact}</dd>
-            <dt>Melding:</dt><dd>{result.message}</dd>
-            <dt>Notater:</dt><dd>{result.notes}</dd>
-          </dl>
-        </div>
-      )}
-
-      {/* DB status */}
-      {dbStatus && (
-        <p className={styles.dbStatus} style={{ color: dbStatus.isError ? '#dc2626' : '#16a34a' }}>
-          {dbStatus.message}
-        </p>
-      )}
-
-      {/* Counter widget */}
-      <div className="card">
-        <h2>Teller (interaksjonstest)</h2>
-        <div className={styles.counter}>
-          <button className={styles.counterBtn} type="button" aria-label="Minsk"
-            onClick={() => setCount(c => c - 1)}>−</button>
-          <span className={styles.counterValue}>{count}</span>
-          <button className={styles.counterBtn} type="button" aria-label="Øk"
-            onClick={() => setCount(c => c + 1)}>+</button>
-        </div>
-      </div>
+      {/* Footer */}
+      <footer className={styles.footer}>
+        <span className={styles.footerText}>Test Page for Web Automation</span>
+        <span className={styles.footerText}>Built with Next.js & Supabase</span>
+      </footer>
 
       {/* Modal */}
-      <div className={`${styles.modalOverlay} ${modalOpen ? styles.modalOverlayOpen : ''}`}
-        role="dialog" aria-modal="true" aria-labelledby="modal-title"
-        onClick={e => { if (e.target === e.currentTarget) setModalOpen(false); }}>
+      <div
+        className={`${styles.modalOverlay} ${modalOpen ? styles.modalOverlayOpen : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+        onClick={e => { if (e.target === e.currentTarget) setModalOpen(false); }}
+      >
         <div className={styles.modal}>
-          <h3 id="modal-title">Dette er en testmodal</h3>
-          <p>Denne modalen brukes for å teste at web-plugins kan oppdage, åpne og lukke overlays og dialoger.</p>
-          <button className={styles.modalClose} onClick={() => setModalOpen(false)}>Lukk</button>
+          <h3 id="modal-title" className={styles.modalTitle}>Test Modal</h3>
+          <p className={styles.modalText}>
+            This modal is used for testing that web plugins can detect, open, and close 
+            overlays and dialogs. The sophisticated animation and backdrop blur demonstrate 
+            modern UI patterns.
+          </p>
+          <button className={styles.modalClose} onClick={() => setModalOpen(false)}>
+            Close
+          </button>
         </div>
       </div>
-    </>
+    </div>
   );
 }
