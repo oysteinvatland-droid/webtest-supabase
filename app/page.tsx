@@ -349,7 +349,7 @@ export default function ContactPage() {
         }
         .profileImageWrapper {
           position: relative;
-          aspect-ratio: 4/5;
+          aspect-ratio: 1/1;
           overflow: hidden;
           max-width: 50%;
         }
@@ -750,7 +750,7 @@ export default function ContactPage() {
 
       {/* Navigation */}
       <nav className="nav">
-        <Link href="/" className="logo">STUDIO</Link>
+        <Link href="/" className="logo" style={{ color: '#ffffff', textDecoration: 'none' }}>STUDIO</Link>
         <Link href="/users" className="navLink" style={{ color: '#ffffff', textDecoration: 'none' }}>View Contacts</Link>
       </nav>
 
