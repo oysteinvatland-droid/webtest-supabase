@@ -1,18 +1,5 @@
-const { readFileSync } = require('fs');
-const { resolve } = require('path');
-const Anthropic = require('@anthropic-ai/sdk');
-
-// Load .env.local if ANTHROPIC_API_KEY is not already set
-if (!process.env.ANTHROPIC_API_KEY) {
-  try {
-    const envPath = resolve(__dirname, '..', '.env.local');
-    const lines = readFileSync(envPath, 'utf8').split('\n');
-    for (const line of lines) {
-      const match = line.match(/^(\w+)=(.*)$/);
-      if (match) process.env[match[1]] = match[2];
-    }
-  } catch (_) {}
-}
+import { NextResponse } from 'next/server';
+import Anthropic from '@anthropic-ai/sdk';
 
 const client = new Anthropic();
 
@@ -30,14 +17,12 @@ Return ONLY valid JSON (no markdown, no code fences) with these fields:
 
 Use "" for string fields and [] for arrays when the information is not present in the text.`;
 
-module.exports = async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+export async function POST(request: Request) {
+  const body = await request.json().catch(() => ({}));
+  const { text } = body as { text?: string };
 
-  const { text } = req.body || {};
   if (!text || typeof text !== 'string' || !text.trim()) {
-    return res.status(400).json({ error: 'Missing or empty "text" field' });
+    return NextResponse.json({ error: 'Missing or empty "text" field' }, { status: 400 });
   }
 
   try {
@@ -48,18 +33,15 @@ module.exports = async function handler(req, res) {
       messages: [{ role: 'user', content: text.trim() }],
     });
 
-    const responseText = message.content[0].text;
-
-    // Strip code fences if Claude adds them despite instructions
+    const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
     const cleaned = responseText.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
-
     const data = JSON.parse(cleaned);
-    return res.status(200).json(data);
+    return NextResponse.json(data);
   } catch (err) {
-    console.error('Interpret error:', err.status, err.message, err.error);
+    console.error('Interpret error:', err);
     if (err instanceof SyntaxError) {
-      return res.status(500).json({ error: 'Failed to parse AI response as JSON' });
+      return NextResponse.json({ error: 'Failed to parse AI response as JSON' }, { status: 500 });
     }
-    return res.status(500).json({ error: 'AI request failed' });
+    return NextResponse.json({ error: 'AI request failed' }, { status: 500 });
   }
-};
+}

@@ -4,51 +4,53 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A static HTML/vanilla JavaScript web app designed for Vercel deployment. It serves as a test interface for Playwright and Claude web plugins, demonstrating Supabase integration and AI-powered form filling.
+A Next.js 15 (App Router) web app deployed on Vercel. It serves as a test interface for Playwright and Claude web plugins, demonstrating Supabase integration and AI-powered form filling.
 
-Two pages:
-- `index.html` — Contact form (writes to Supabase), plus a counter widget and modal for interaction testing
-- `users.html` — Read-only listing of submitted contacts from Supabase
+Two routes:
+- `/` (`app/page.tsx`) — Contact form (writes to Supabase), plus a counter widget and modal for interaction testing
+- `/users` (`app/users/page.tsx`) — Read-only listing of submitted contacts from Supabase
 
 ## Running the App
 
-For local development with the API route (recommended):
-
 ```bash
-npx vercel dev
+npm run dev
 ```
 
-This serves static files and the `/api/interpret` serverless function. Requires a `.env.local` file with:
+Starts the Next.js dev server (port 3000). Requires `.env.local` with:
 
 ```
 ANTHROPIC_API_KEY=sk-ant-...
+NEXT_PUBLIC_SUPABASE_URL=https://...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+NEXT_PUBLIC_SONIOX_API_KEY=...
 ```
 
-For static-only testing (no AI fill):
+## Build & Deploy
 
 ```bash
-python3 -m http.server 8080
+npm run build   # production build
+npm run start   # serve production build locally
 ```
 
-## AI Form Fill (Vercel Serverless)
+`vercel.json` sets `"framework": "nextjs"`. The only server-side code is the API route; both pages are `"use client"` components.
 
-The "AI Fyll" button in `index.html` sends the notes textarea content to `/api/interpret`, which calls the Claude API to extract structured contact data and auto-fills the form.
+## AI Form Fill (API Route)
 
-- **Serverless function:** `api/interpret.js` — POST endpoint, uses `@anthropic-ai/sdk`
-- **Environment variable:** `ANTHROPIC_API_KEY` (set in Vercel dashboard or `.env.local` for local dev)
+The "AI Fyll" button sends the notes textarea content to `/api/interpret`, which calls the Claude API to extract structured contact data and auto-fills the form.
+
+- **Route handler:** `app/api/interpret/route.ts` — POST endpoint, uses `@anthropic-ai/sdk`
+- **Environment variable:** `ANTHROPIC_API_KEY` (server-side only, set in Vercel dashboard or `.env.local`)
 - **Model:** `claude-sonnet-4-20250514` for cost-efficient structured extraction
+
+## Speech-to-Text (Soniox)
+
+The "Dikter" (dictate) button uses the Soniox real-time STT API loaded via dynamic ESM CDN import (`@soniox/speech-to-text-web`) with `/* webpackIgnore: true */`. The API key comes from `NEXT_PUBLIC_SONIOX_API_KEY`. It supports Norwegian (`no`) and English (`en`) with the `stt-rt-v4` model.
 
 ## Supabase Integration
 
-Supabase is loaded via CDN (`@supabase/supabase-js@2`) and credentials are hardcoded directly in both HTML files:
+Supabase client is created in `lib/supabase.ts` using `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` environment variables.
 
-```js
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-```
+**Table: `contacts`** — columns: `name`, `email`, `address`, `city`, `country`, `interests` (array), `contact_method`, `message`, `notes`, `created_at`
 
-**Table: `contacts`** — columns: `name`, `email`, `address`, `city`, `country`, `interests` (array), `contact_method`, `message`, `created_at`
-
-- `index.html` inserts rows via `sb.from('contacts').insert({...})`
-- `users.html` reads rows via `sb.from('contacts').select('*').order('created_at', { ascending: false })`
-
-Both files must be kept in sync if the Supabase client config changes.
+- `app/page.tsx` inserts rows via `supabase.from('contacts').insert({...})`
+- `app/users/page.tsx` reads rows via `supabase.from('contacts').select('*').order('created_at', { ascending: false })`

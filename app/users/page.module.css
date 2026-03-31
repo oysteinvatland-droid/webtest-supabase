@@ -1,0 +1,48 @@
+.wideCard {
+  max-width: 900px;
+  overflow-x: auto;
+}
+
+.navLink {
+  color: #6366f1;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.navLink:hover { text-decoration: underline; }
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 0.6rem 0.8rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.table th {
+  font-weight: 600;
+  color: #444;
+  background: #f9fafb;
+  position: sticky;
+  top: 0;
+}
+
+.table tr:hover td { background: #f0f2f5; }
+
+.statusMsg {
+  text-align: center;
+  padding: 2rem;
+}
+
+.error {
+  color: #dc2626;
+}
+
+.muted {
+  color: #888;
+}
