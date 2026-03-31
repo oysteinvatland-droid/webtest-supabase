@@ -212,7 +212,7 @@ export default function ContactPage() {
     <>
       <header>
         <h1>Claude Web Plugin Test Page</h1>
-        <p>Testside for Playwright og Claude web-plugins</p>
+        <p>Testside for v0, Playwright og Claude web-plugins</p>
         <nav style={{ marginTop: '0.8rem' }}>
           <Link href="/users" className={styles.navLink}>Vis alle kontakter &rarr;</Link>
         </nav>
