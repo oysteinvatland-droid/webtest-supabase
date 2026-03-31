@@ -118,3 +118,9 @@ h1, h2, h3, h4, h5, h6 {
   outline: 1px solid var(--accent);
   outline-offset: 2px;
 }
+
+/* Reset */
+img, picture, video, canvas, svg {
+  display: block;
+  max-width: 100%;
+}
