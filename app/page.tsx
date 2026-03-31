@@ -751,7 +751,7 @@ export default function ContactPage() {
       {/* Navigation */}
       <nav className="nav">
         <Link href="/" className="logo">STUDIO</Link>
-        <Link href="/users" className="navLink">View Contacts</Link>
+        <Link href="/users" className="navLink" style={{ color: '#ffffff', textDecoration: 'none' }}>View Contacts</Link>
       </nav>
 
       {/* Hero Section */}
