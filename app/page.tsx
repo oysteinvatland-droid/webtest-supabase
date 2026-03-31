@@ -4,7 +4,6 @@ import { useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getSupabase } from '@/lib/supabase';
-import styles from './page.module.css';
 
 interface FormData {
   name: string;
@@ -210,62 +209,596 @@ export default function ContactPage() {
   };
 
   return (
-    <div className={styles.page}>
+    <div className="page">
+      <style jsx>{`
+        .page {
+          min-height: 100vh;
+          background: #0a0a0a;
+          color: #f5f5f0;
+        }
+        .nav {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          z-index: 50;
+          padding: 2rem 4rem;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          mix-blend-mode: difference;
+        }
+        .logo {
+          font-size: 1.5rem;
+          font-weight: 500;
+          color: white;
+          text-decoration: none;
+          letter-spacing: 0.1em;
+        }
+        .navLink {
+          color: white;
+          text-decoration: none;
+          font-size: 0.85rem;
+          font-weight: 400;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+        }
+        .hero {
+          position: relative;
+          height: 100vh;
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-end;
+          padding: 4rem;
+          overflow: hidden;
+        }
+        .heroBackground {
+          position: absolute;
+          inset: 0;
+          z-index: 0;
+        }
+        .heroImage {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          opacity: 0.6;
+          filter: grayscale(30%);
+        }
+        .heroOverlay {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(to top, rgba(10,10,10,0.95) 0%, rgba(10,10,10,0.4) 50%, rgba(10,10,10,0.2) 100%);
+        }
+        .heroContent {
+          position: relative;
+          z-index: 1;
+          max-width: 1400px;
+          width: 100%;
+          margin: 0 auto;
+        }
+        .heroTitle {
+          font-size: clamp(3rem, 10vw, 8rem);
+          font-weight: 400;
+          color: #f5f5f0;
+          margin-bottom: 1.5rem;
+          line-height: 0.95;
+        }
+        .heroSubtitle {
+          font-size: clamp(1rem, 2vw, 1.25rem);
+          color: #737373;
+          max-width: 500px;
+          font-weight: 300;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+        }
+        .scrollIndicator {
+          position: absolute;
+          bottom: 4rem;
+          right: 4rem;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.75rem;
+        }
+        .scrollText {
+          font-size: 0.7rem;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          color: #737373;
+          writing-mode: vertical-rl;
+        }
+        .scrollLine {
+          width: 1px;
+          height: 60px;
+          background: #404040;
+        }
+        .main {
+          padding: 8rem 4rem;
+          max-width: 1400px;
+          margin: 0 auto;
+        }
+        .section {
+          margin-bottom: 10rem;
+        }
+        .sectionHeader {
+          display: flex;
+          align-items: baseline;
+          gap: 2rem;
+          margin-bottom: 4rem;
+          padding-bottom: 1.5rem;
+          border-bottom: 1px solid #262626;
+        }
+        .sectionNumber {
+          font-size: 0.9rem;
+          color: #737373;
+          font-style: italic;
+        }
+        .sectionTitle {
+          font-size: clamp(2rem, 5vw, 3.5rem);
+          color: #f5f5f0;
+          font-weight: 400;
+        }
+        .profileSection {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 6rem;
+          align-items: center;
+        }
+        .profileImageWrapper {
+          position: relative;
+          aspect-ratio: 4/5;
+          overflow: hidden;
+          max-width: 50%;
+        }
+        .profileImage {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          filter: grayscale(100%);
+          transition: filter 0.6s ease, transform 0.6s ease;
+        }
+        .profileImageWrapper:hover .profileImage {
+          filter: grayscale(0%);
+          transform: scale(1.02);
+        }
+        .profileContent {
+          padding: 2rem 0;
+        }
+        .profileText {
+          font-size: 1.1rem;
+          color: #737373;
+          line-height: 1.8;
+          margin-bottom: 2rem;
+        }
+        .formGrid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 2rem 4rem;
+        }
+        .formGridFull {
+          grid-column: 1 / -1;
+        }
+        .field {
+          position: relative;
+        }
+        .fieldLabel {
+          display: block;
+          font-size: 0.7rem;
+          font-weight: 500;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          color: #737373;
+          margin-bottom: 0.75rem;
+        }
+        .fieldInput {
+          width: 100%;
+          padding: 1rem 0;
+          border: none;
+          border-bottom: 1px solid #262626;
+          background: transparent;
+          color: #e5e5e5;
+          font-size: 1rem;
+          font-family: inherit;
+          font-weight: 300;
+          transition: border-color 0.3s ease;
+        }
+        .fieldInput::placeholder {
+          color: #404040;
+        }
+        .fieldInput:focus {
+          outline: none;
+          border-color: #c9a962;
+        }
+        .fieldSelect {
+          width: 100%;
+          padding: 1rem 0;
+          border: none;
+          border-bottom: 1px solid #262626;
+          background: transparent;
+          color: #e5e5e5;
+          font-size: 1rem;
+          font-family: inherit;
+          font-weight: 300;
+          cursor: pointer;
+          appearance: none;
+          transition: border-color 0.3s ease;
+        }
+        .fieldSelect:focus {
+          outline: none;
+          border-color: #c9a962;
+        }
+        .fieldSelect option {
+          background: #171717;
+          color: #e5e5e5;
+        }
+        .fieldTextarea {
+          width: 100%;
+          padding: 1rem;
+          border: 1px solid #262626;
+          background: #141414;
+          color: #e5e5e5;
+          font-size: 1rem;
+          font-family: inherit;
+          font-weight: 300;
+          min-height: 120px;
+          resize: vertical;
+          transition: border-color 0.3s ease;
+        }
+        .fieldTextarea::placeholder {
+          color: #404040;
+        }
+        .fieldTextarea:focus {
+          outline: none;
+          border-color: #c9a962;
+        }
+        .optionGroup {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 1rem 2rem;
+        }
+        .optionItem {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          cursor: pointer;
+          font-size: 0.9rem;
+          color: #737373;
+          transition: color 0.3s ease;
+        }
+        .optionItem:hover {
+          color: #e5e5e5;
+        }
+        .checkbox, .radio {
+          appearance: none;
+          width: 18px;
+          height: 18px;
+          border: 1px solid #262626;
+          background: transparent;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+        .radio {
+          border-radius: 50%;
+        }
+        .checkbox:checked, .radio:checked {
+          background: #c9a962;
+          border-color: #c9a962;
+        }
+        .notesActions {
+          display: flex;
+          gap: 1rem;
+          margin-top: 1rem;
+        }
+        .actionBtn {
+          padding: 0.75rem 1.5rem;
+          background: transparent;
+          border: 1px solid #262626;
+          color: #737373;
+          font-size: 0.75rem;
+          font-weight: 500;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+        .actionBtn:hover {
+          background: #141414;
+          color: #e5e5e5;
+          border-color: #e5e5e5;
+        }
+        .actionBtnRecording {
+          background: rgba(201, 169, 98, 0.1);
+          border-color: #c9a962;
+          color: #c9a962;
+        }
+        .actionBtn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+        .formActions {
+          display: flex;
+          gap: 1.5rem;
+          margin-top: 4rem;
+          padding-top: 4rem;
+          border-top: 1px solid #262626;
+        }
+        .btnPrimary {
+          padding: 1.25rem 3rem;
+          background: #f5f5f0;
+          color: #0a0a0a;
+          border: none;
+          font-size: 0.8rem;
+          font-weight: 500;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+        .btnPrimary:hover {
+          background: #c9a962;
+          transform: translateY(-2px);
+        }
+        .btnSecondary {
+          padding: 1.25rem 3rem;
+          background: transparent;
+          color: #e5e5e5;
+          border: 1px solid #262626;
+          font-size: 0.8rem;
+          font-weight: 500;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+        .btnSecondary:hover {
+          border-color: #e5e5e5;
+          background: #141414;
+        }
+        .result {
+          margin-top: 4rem;
+          padding: 3rem;
+          border: 1px solid #c9a962;
+          background: rgba(201, 169, 98, 0.05);
+        }
+        .resultTitle {
+          font-size: 1.5rem;
+          color: #c9a962;
+          margin-bottom: 2rem;
+          font-weight: 400;
+        }
+        .resultGrid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 1.5rem 3rem;
+        }
+        .resultItem {
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+        }
+        .resultLabel {
+          font-size: 0.7rem;
+          font-weight: 500;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          color: #737373;
+        }
+        .resultValue {
+          font-size: 1rem;
+          color: #e5e5e5;
+        }
+        .dbStatus {
+          text-align: center;
+          font-size: 0.85rem;
+          font-weight: 500;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          padding: 1rem;
+          margin-top: 2rem;
+        }
+        .dbStatusSuccess {
+          color: #c9a962;
+          border: 1px solid #c9a962;
+        }
+        .dbStatusError {
+          color: #ef4444;
+          border: 1px solid #ef4444;
+        }
+        .counterSection {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 3rem;
+          border: 1px solid #262626;
+        }
+        .counterTitle {
+          font-size: 1.25rem;
+          color: #737373;
+        }
+        .counter {
+          display: flex;
+          align-items: center;
+          gap: 2rem;
+        }
+        .counterBtn {
+          width: 50px;
+          height: 50px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: transparent;
+          border: 1px solid #262626;
+          color: #e5e5e5;
+          font-size: 1.5rem;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+        .counterBtn:hover {
+          background: #141414;
+          border-color: #e5e5e5;
+        }
+        .counterValue {
+          font-size: 3rem;
+          font-weight: 400;
+          min-width: 80px;
+          text-align: center;
+          color: #c9a962;
+        }
+        .modalOverlay {
+          display: none;
+          position: fixed;
+          inset: 0;
+          background: rgba(10, 10, 10, 0.9);
+          backdrop-filter: blur(8px);
+          z-index: 100;
+          align-items: center;
+          justify-content: center;
+        }
+        .modalOverlayOpen {
+          display: flex;
+        }
+        .modal {
+          background: #171717;
+          border: 1px solid #262626;
+          padding: 4rem;
+          max-width: 500px;
+          width: 90%;
+        }
+        .modalTitle {
+          font-size: 2rem;
+          color: #f5f5f0;
+          margin-bottom: 1.5rem;
+          font-weight: 400;
+        }
+        .modalText {
+          font-size: 1rem;
+          color: #737373;
+          line-height: 1.8;
+          margin-bottom: 2.5rem;
+        }
+        .modalClose {
+          padding: 1rem 2.5rem;
+          background: #f5f5f0;
+          color: #0a0a0a;
+          border: none;
+          font-size: 0.75rem;
+          font-weight: 500;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+        .modalClose:hover {
+          background: #c9a962;
+        }
+        .footer {
+          padding: 4rem;
+          border-top: 1px solid #262626;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .footerText {
+          font-size: 0.8rem;
+          color: #737373;
+          letter-spacing: 0.05em;
+        }
+        @media (max-width: 1024px) {
+          .profileSection {
+            grid-template-columns: 1fr;
+            gap: 3rem;
+          }
+          .formGrid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+          }
+        }
+        @media (max-width: 768px) {
+          .hero {
+            padding: 2rem;
+          }
+          .nav {
+            padding: 1.5rem 2rem;
+          }
+          .main {
+            padding: 4rem 2rem;
+          }
+          .section {
+            margin-bottom: 5rem;
+          }
+          .sectionHeader {
+            flex-direction: column;
+            gap: 0.5rem;
+          }
+          .formActions {
+            flex-direction: column;
+          }
+          .scrollIndicator {
+            display: none;
+          }
+          .footer {
+            padding: 2rem;
+            flex-direction: column;
+            gap: 1rem;
+            text-align: center;
+          }
+        }
+      `}</style>
+
       {/* Navigation */}
-      <nav className={styles.nav}>
-        <Link href="/" className={styles.logo}>STUDIO</Link>
-        <Link href="/users" className={styles.navLink}>View Contacts</Link>
+      <nav className="nav">
+        <Link href="/" className="logo">STUDIO</Link>
+        <Link href="/users" className="navLink">View Contacts</Link>
       </nav>
 
       {/* Hero Section */}
-      <section className={styles.hero}>
-        <div className={styles.heroBackground}>
+      <section className="hero">
+        <div className="heroBackground">
           <Image
             src="/images/hero.jpg"
             alt="Abstract flowing fabric"
             fill
             priority
-            className={styles.heroImage}
+            className="heroImage"
           />
-          <div className={styles.heroOverlay} />
+          <div className="heroOverlay" />
         </div>
-        <div className={styles.heroContent}>
-          <h1 className={styles.heroTitle}>Get in Touch</h1>
-          <p className={styles.heroSubtitle}>
+        <div className="heroContent">
+          <h1 className="heroTitle">Get in Touch</h1>
+          <p className="heroSubtitle">
             We would love to hear from you. Let us create something beautiful together.
           </p>
         </div>
-        <div className={styles.scrollIndicator}>
-          <span className={styles.scrollText}>Scroll</span>
-          <div className={styles.scrollLine} />
+        <div className="scrollIndicator">
+          <span className="scrollText">Scroll</span>
+          <div className="scrollLine" />
         </div>
       </section>
 
       {/* Main Content */}
-      <main className={styles.main}>
+      <main className="main">
         {/* Profile Section */}
-        <section className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <span className={styles.sectionNumber}>01</span>
-            <h2 className={styles.sectionTitle}>About</h2>
+        <section className="section">
+          <div className="sectionHeader">
+            <span className="sectionNumber">01</span>
+            <h2 className="sectionTitle">About</h2>
           </div>
-          <div className={styles.profileSection}>
-            <div className={styles.profileImageWrapper}>
+          <div className="profileSection">
+            <div className="profileImageWrapper">
               <Image
                 src="/images/profile.jpg"
                 alt="Professional profile"
                 fill
-                className={styles.profileImage}
+                className="profileImage"
               />
-              <div className={styles.profileImageOverlay} />
             </div>
-            <div className={styles.profileContent}>
-              <p className={styles.profileText}>
+            <div className="profileContent">
+              <p className="profileText">
                 This is a test page designed for web automation tools like Playwright 
                 and Claude web plugins. The form below demonstrates various input types, 
                 validation patterns, and modern UI interactions.
               </p>
-              <p className={styles.profileText}>
+              <p className="profileText">
                 Fill out the contact form to submit your information. You can also use 
                 the dictation feature to speak your notes, or let AI interpret and 
                 auto-fill the form fields.
@@ -275,71 +808,71 @@ export default function ContactPage() {
         </section>
 
         {/* Contact Form Section */}
-        <section className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <span className={styles.sectionNumber}>02</span>
-            <h2 className={styles.sectionTitle}>Contact</h2>
+        <section className="section">
+          <div className="sectionHeader">
+            <span className="sectionNumber">02</span>
+            <h2 className="sectionTitle">Contact</h2>
           </div>
           
           <form onSubmit={handleSubmit} noValidate>
-            <div className={styles.formGrid}>
-              <div className={styles.field}>
-                <label htmlFor="name" className={styles.fieldLabel}>Full Name</label>
+            <div className="formGrid">
+              <div className="field">
+                <label htmlFor="name" className="fieldLabel">Full Name</label>
                 <input
                   type="text"
                   id="name"
                   placeholder="John Doe"
                   autoComplete="name"
-                  className={styles.fieldInput}
+                  className="fieldInput"
                   value={form.name}
                   onChange={e => updateField('name', e.target.value)}
                 />
               </div>
 
-              <div className={styles.field}>
-                <label htmlFor="email" className={styles.fieldLabel}>Email</label>
+              <div className="field">
+                <label htmlFor="email" className="fieldLabel">Email</label>
                 <input
                   type="email"
                   id="email"
                   placeholder="john@example.com"
                   autoComplete="email"
-                  className={styles.fieldInput}
+                  className="fieldInput"
                   value={form.email}
                   onChange={e => updateField('email', e.target.value)}
                 />
               </div>
 
-              <div className={styles.field}>
-                <label htmlFor="address" className={styles.fieldLabel}>Street Address</label>
+              <div className="field">
+                <label htmlFor="address" className="fieldLabel">Street Address</label>
                 <input
                   type="text"
                   id="address"
                   placeholder="123 Main Street"
                   autoComplete="street-address"
-                  className={styles.fieldInput}
+                  className="fieldInput"
                   value={form.address}
                   onChange={e => updateField('address', e.target.value)}
                 />
               </div>
 
-              <div className={styles.field}>
-                <label htmlFor="city" className={styles.fieldLabel}>City</label>
+              <div className="field">
+                <label htmlFor="city" className="fieldLabel">City</label>
                 <input
                   type="text"
                   id="city"
                   placeholder="Oslo"
                   autoComplete="address-level2"
-                  className={styles.fieldInput}
+                  className="fieldInput"
                   value={form.city}
                   onChange={e => updateField('city', e.target.value)}
                 />
               </div>
 
-              <div className={styles.field}>
-                <label htmlFor="country" className={styles.fieldLabel}>Country</label>
+              <div className="field">
+                <label htmlFor="country" className="fieldLabel">Country</label>
                 <select
                   id="country"
-                  className={styles.fieldSelect}
+                  className="fieldSelect"
                   value={form.country}
                   onChange={e => updateField('country', e.target.value)}
                 >
@@ -349,15 +882,15 @@ export default function ContactPage() {
                 </select>
               </div>
 
-              <div className={styles.field}>
-                <label className={styles.fieldLabel}>Interests</label>
-                <div className={styles.optionGroup}>
+              <div className="field">
+                <label className="fieldLabel">Interests</label>
+                <div className="optionGroup">
                   {INTERESTS.map(i => (
-                    <label key={i.value} className={styles.optionItem}>
+                    <label key={i.value} className="optionItem">
                       <input
                         type="checkbox"
                         id={i.id}
-                        className={styles.checkbox}
+                        className="checkbox"
                         checked={form.interests.includes(i.value)}
                         onChange={e => handleInterestChange(i.value, e.target.checked)}
                       />
@@ -367,16 +900,16 @@ export default function ContactPage() {
                 </div>
               </div>
 
-              <div className={`${styles.field} ${styles.formGridFull}`}>
-                <label className={styles.fieldLabel}>Preferred Contact Method</label>
-                <div className={styles.optionGroup}>
+              <div className="field formGridFull">
+                <label className="fieldLabel">Preferred Contact Method</label>
+                <div className="optionGroup">
                   {CONTACT_METHODS.map(m => (
-                    <label key={m.value} className={styles.optionItem}>
+                    <label key={m.value} className="optionItem">
                       <input
                         type="radio"
                         name="contact"
                         id={m.id}
-                        className={styles.radio}
+                        className="radio"
                         value={m.value}
                         checked={form.contact === m.value}
                         onChange={e => updateField('contact', e.target.value)}
@@ -387,37 +920,37 @@ export default function ContactPage() {
                 </div>
               </div>
 
-              <div className={`${styles.field} ${styles.formGridFull}`}>
-                <label htmlFor="message" className={styles.fieldLabel}>Message</label>
+              <div className="field formGridFull">
+                <label htmlFor="message" className="fieldLabel">Message</label>
                 <textarea
                   id="message"
                   placeholder="Write your message here..."
-                  className={styles.fieldTextarea}
+                  className="fieldTextarea"
                   value={form.message}
                   onChange={e => updateField('message', e.target.value)}
                 />
               </div>
 
-              <div className={`${styles.field} ${styles.formGridFull} ${styles.notesField}`}>
-                <label htmlFor="notes" className={styles.fieldLabel}>Notes</label>
+              <div className="field formGridFull">
+                <label htmlFor="notes" className="fieldLabel">Notes</label>
                 <textarea
                   id="notes"
                   placeholder="Dictate or write notes here..."
-                  className={styles.fieldTextarea}
+                  className="fieldTextarea"
                   value={form.notes}
                   onChange={e => updateField('notes', e.target.value)}
                 />
-                <div className={styles.notesActions}>
+                <div className="notesActions">
                   <button
                     type="button"
-                    className={`${styles.actionBtn} ${isRecording ? styles.actionBtnRecording : ''}`}
+                    className={`actionBtn ${isRecording ? 'actionBtnRecording' : ''}`}
                     onClick={handleDictate}
                   >
                     {isRecording ? 'Stop Recording' : 'Dictate'}
                   </button>
                   <button
                     type="button"
-                    className={styles.actionBtn}
+                    className="actionBtn"
                     disabled={isAiFilling}
                     onClick={handleAiFill}
                   >
@@ -427,53 +960,53 @@ export default function ContactPage() {
               </div>
             </div>
 
-            <div className={styles.formActions}>
-              <button type="submit" className={styles.btnPrimary}>Submit</button>
-              <button type="button" className={styles.btnSecondary} onClick={handleReset}>Reset</button>
-              <button type="button" className={styles.btnSecondary} onClick={() => setModalOpen(true)}>Open Modal</button>
+            <div className="formActions">
+              <button type="submit" className="btnPrimary">Submit</button>
+              <button type="button" className="btnSecondary" onClick={handleReset}>Reset</button>
+              <button type="button" className="btnSecondary" onClick={() => setModalOpen(true)}>Open Modal</button>
             </div>
           </form>
 
           {/* Result */}
           {result && (
-            <div className={styles.result} role="region" aria-label="Submitted data">
-              <h3 className={styles.resultTitle}>Submitted Information</h3>
-              <div className={styles.resultGrid}>
-                <div className={styles.resultItem}>
-                  <span className={styles.resultLabel}>Name</span>
-                  <span className={styles.resultValue}>{result.name}</span>
+            <div className="result" role="region" aria-label="Submitted data">
+              <h3 className="resultTitle">Submitted Information</h3>
+              <div className="resultGrid">
+                <div className="resultItem">
+                  <span className="resultLabel">Name</span>
+                  <span className="resultValue">{result.name}</span>
                 </div>
-                <div className={styles.resultItem}>
-                  <span className={styles.resultLabel}>Email</span>
-                  <span className={styles.resultValue}>{result.email}</span>
+                <div className="resultItem">
+                  <span className="resultLabel">Email</span>
+                  <span className="resultValue">{result.email}</span>
                 </div>
-                <div className={styles.resultItem}>
-                  <span className={styles.resultLabel}>Address</span>
-                  <span className={styles.resultValue}>{result.address}</span>
+                <div className="resultItem">
+                  <span className="resultLabel">Address</span>
+                  <span className="resultValue">{result.address}</span>
                 </div>
-                <div className={styles.resultItem}>
-                  <span className={styles.resultLabel}>City</span>
-                  <span className={styles.resultValue}>{result.city}</span>
+                <div className="resultItem">
+                  <span className="resultLabel">City</span>
+                  <span className="resultValue">{result.city}</span>
                 </div>
-                <div className={styles.resultItem}>
-                  <span className={styles.resultLabel}>Country</span>
-                  <span className={styles.resultValue}>{result.country}</span>
+                <div className="resultItem">
+                  <span className="resultLabel">Country</span>
+                  <span className="resultValue">{result.country}</span>
                 </div>
-                <div className={styles.resultItem}>
-                  <span className={styles.resultLabel}>Interests</span>
-                  <span className={styles.resultValue}>{result.interests}</span>
+                <div className="resultItem">
+                  <span className="resultLabel">Interests</span>
+                  <span className="resultValue">{result.interests}</span>
                 </div>
-                <div className={styles.resultItem}>
-                  <span className={styles.resultLabel}>Contact</span>
-                  <span className={styles.resultValue}>{result.contact}</span>
+                <div className="resultItem">
+                  <span className="resultLabel">Contact</span>
+                  <span className="resultValue">{result.contact}</span>
                 </div>
-                <div className={styles.resultItem}>
-                  <span className={styles.resultLabel}>Message</span>
-                  <span className={styles.resultValue}>{result.message}</span>
+                <div className="resultItem">
+                  <span className="resultLabel">Message</span>
+                  <span className="resultValue">{result.message}</span>
                 </div>
-                <div className={styles.resultItem}>
-                  <span className={styles.resultLabel}>Notes</span>
-                  <span className={styles.resultValue}>{result.notes}</span>
+                <div className="resultItem">
+                  <span className="resultLabel">Notes</span>
+                  <span className="resultValue">{result.notes}</span>
                 </div>
               </div>
             </div>
@@ -481,32 +1014,32 @@ export default function ContactPage() {
 
           {/* DB Status */}
           {dbStatus && (
-            <p className={`${styles.dbStatus} ${dbStatus.isError ? styles.dbStatusError : styles.dbStatusSuccess}`}>
+            <p className={`dbStatus ${dbStatus.isError ? 'dbStatusError' : 'dbStatusSuccess'}`}>
               {dbStatus.message}
             </p>
           )}
         </section>
 
         {/* Counter Section */}
-        <section className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <span className={styles.sectionNumber}>03</span>
-            <h2 className={styles.sectionTitle}>Interaction</h2>
+        <section className="section">
+          <div className="sectionHeader">
+            <span className="sectionNumber">03</span>
+            <h2 className="sectionTitle">Interaction</h2>
           </div>
-          <div className={styles.counterSection}>
-            <span className={styles.counterTitle}>Counter Test Widget</span>
-            <div className={styles.counter}>
+          <div className="counterSection">
+            <span className="counterTitle">Counter Test Widget</span>
+            <div className="counter">
               <button
-                className={styles.counterBtn}
+                className="counterBtn"
                 type="button"
                 aria-label="Decrease"
                 onClick={() => setCount(c => c - 1)}
               >
                 -
               </button>
-              <span className={styles.counterValue}>{count}</span>
+              <span className="counterValue">{count}</span>
               <button
-                className={styles.counterBtn}
+                className="counterBtn"
                 type="button"
                 aria-label="Increase"
                 onClick={() => setCount(c => c + 1)}
@@ -519,27 +1052,30 @@ export default function ContactPage() {
       </main>
 
       {/* Footer */}
-      <footer className={styles.footer}>
-        <span className={styles.footerText}>Test Page for Web Automation</span>
-        <span className={styles.footerText}>Built with Next.js & Supabase</span>
+      <footer className="footer">
+        <span className="footerText">Test Page for Web Automation</span>
+        <span className="footerText">Built with Next.js & Supabase</span>
       </footer>
 
       {/* Modal */}
       <div
-        className={`${styles.modalOverlay} ${modalOpen ? styles.modalOverlayOpen : ''}`}
+        className={`modalOverlay ${modalOpen ? 'modalOverlayOpen' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
         onClick={e => { if (e.target === e.currentTarget) setModalOpen(false); }}
       >
-        <div className={styles.modal}>
-          <h3 id="modal-title" className={styles.modalTitle}>Test Modal</h3>
-          <p className={styles.modalText}>
-            This modal is used for testing that web plugins can detect, open, and close 
-            overlays and dialogs. The sophisticated animation and backdrop blur demonstrate 
-            modern UI patterns.
+        <div className="modal">
+          <h2 id="modal-title" className="modalTitle">Modal Dialog</h2>
+          <p className="modalText">
+            This is an example modal dialog for testing overlay interactions and
+            accessibility patterns. Click outside or press the button to close.
           </p>
-          <button className={styles.modalClose} onClick={() => setModalOpen(false)}>
+          <button
+            type="button"
+            className="modalClose"
+            onClick={() => setModalOpen(false)}
+          >
             Close
           </button>
         </div>
