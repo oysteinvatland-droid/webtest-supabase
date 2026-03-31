@@ -1,10 +1,8 @@
-/* Page Layout */
 .page {
   min-height: 100vh;
   position: relative;
 }
 
-/* Hero Section */
 .hero {
   position: relative;
   height: 100vh;
@@ -41,7 +39,6 @@
   max-width: 1400px;
   width: 100%;
   margin: 0 auto;
-  animation: fadeInUp 1s ease-out;
 }
 
 .heroTitle {
@@ -61,7 +58,6 @@
   text-transform: uppercase;
 }
 
-/* Navigation */
 .nav {
   position: fixed;
   top: 0;
@@ -76,7 +72,6 @@
 }
 
 .logo {
-  font-family: 'Cormorant Garamond', serif;
   font-size: 1.5rem;
   font-weight: 500;
   color: white;
@@ -111,7 +106,6 @@
   width: 100%;
 }
 
-/* Scroll indicator */
 .scrollIndicator {
   position: absolute;
   bottom: 4rem;
@@ -120,7 +114,6 @@
   flex-direction: column;
   align-items: center;
   gap: 0.75rem;
-  animation: fadeIn 1.5s ease-out 0.5s backwards;
 }
 
 .scrollText {
@@ -139,39 +132,15 @@
   overflow: hidden;
 }
 
-.scrollLine::after {
-  content: '';
-  position: absolute;
-  top: -100%;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: var(--accent);
-  animation: scrollDown 2s ease-in-out infinite;
-}
-
-@keyframes scrollDown {
-  0% { top: -100%; }
-  50% { top: 100%; }
-  100% { top: 100%; }
-}
-
-/* Main Content */
 .main {
   padding: 8rem 4rem;
   max-width: 1400px;
   margin: 0 auto;
 }
 
-/* Section */
 .section {
   margin-bottom: 10rem;
-  animation: fadeInUp 0.8s ease-out backwards;
 }
-
-.section:nth-child(1) { animation-delay: 0.1s; }
-.section:nth-child(2) { animation-delay: 0.2s; }
-.section:nth-child(3) { animation-delay: 0.3s; }
 
 .sectionHeader {
   display: flex;
@@ -183,7 +152,6 @@
 }
 
 .sectionNumber {
-  font-family: 'Cormorant Garamond', serif;
   font-size: 0.9rem;
   color: var(--muted-foreground);
   font-style: italic;
@@ -194,7 +162,6 @@
   color: var(--primary);
 }
 
-/* Profile Image */
 .profileSection {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -240,7 +207,6 @@
   margin-bottom: 2rem;
 }
 
-/* Form */
 .formGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -338,7 +304,6 @@
   border-color: var(--accent);
 }
 
-/* Checkbox & Radio Groups */
 .optionGroup {
   display: flex;
   flex-wrap: wrap;
@@ -359,7 +324,7 @@
   color: var(--foreground);
 }
 
-.optionItem input {
+.checkbox {
   appearance: none;
   width: 18px;
   height: 18px;
@@ -370,43 +335,28 @@
   transition: all 0.3s ease;
 }
 
-.optionItem input[type="checkbox"] {
-  border-radius: 0;
-}
-
-.optionItem input[type="radio"] {
-  border-radius: 50%;
-}
-
-.optionItem input:checked {
+.checkbox:checked {
   background: var(--accent);
   border-color: var(--accent);
 }
 
-.optionItem input:checked::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.optionItem input[type="checkbox"]:checked::after {
-  width: 6px;
-  height: 10px;
-  border: solid var(--background);
-  border-width: 0 2px 2px 0;
-  transform: translate(-50%, -60%) rotate(45deg);
-}
-
-.optionItem input[type="radio"]:checked::after {
-  width: 6px;
-  height: 6px;
-  background: var(--background);
+.radio {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--border);
   border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.3s ease;
 }
 
-/* Notes Field */
+.radio:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
 .notesField {
   position: relative;
 }
@@ -440,12 +390,6 @@
   background: rgba(201, 169, 98, 0.1);
   border-color: var(--accent);
   color: var(--accent);
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
 }
 
 .actionBtn:disabled {
@@ -453,7 +397,6 @@
   cursor: not-allowed;
 }
 
-/* Buttons */
 .formActions {
   display: flex;
   gap: 1.5rem;
@@ -498,13 +441,11 @@
   background: var(--secondary);
 }
 
-/* Result */
 .result {
   margin-top: 4rem;
   padding: 3rem;
   border: 1px solid var(--accent);
   background: rgba(201, 169, 98, 0.05);
-  animation: scaleIn 0.5s ease-out;
 }
 
 .resultTitle {
@@ -538,7 +479,6 @@
   color: var(--foreground);
 }
 
-/* DB Status */
 .dbStatus {
   text-align: center;
   font-size: 0.85rem;
@@ -547,7 +487,6 @@
   text-transform: uppercase;
   padding: 1rem;
   margin-top: 2rem;
-  animation: fadeIn 0.3s ease-out;
 }
 
 .dbStatusSuccess {
@@ -560,7 +499,6 @@
   border: 1px solid #ef4444;
 }
 
-/* Counter Widget */
 .counterSection {
   display: flex;
   align-items: center;
@@ -600,7 +538,6 @@
 }
 
 .counterValue {
-  font-family: 'Cormorant Garamond', serif;
   font-size: 3rem;
   font-weight: 400;
   min-width: 80px;
@@ -608,7 +545,6 @@
   color: var(--accent);
 }
 
-/* Modal */
 .modalOverlay {
   display: none;
   position: fixed;
@@ -630,7 +566,6 @@
   padding: 4rem;
   max-width: 500px;
   width: 90%;
-  animation: scaleIn 0.4s ease-out;
 }
 
 .modalTitle {
@@ -663,7 +598,6 @@
   background: var(--accent);
 }
 
-/* Footer */
 .footer {
   padding: 4rem;
   border-top: 1px solid var(--border);
@@ -678,7 +612,6 @@
   letter-spacing: 0.05em;
 }
 
-/* Responsive */
 @media (max-width: 1024px) {
   .profileSection {
     grid-template-columns: 1fr;

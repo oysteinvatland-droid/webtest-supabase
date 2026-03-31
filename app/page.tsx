@@ -357,6 +357,7 @@ export default function ContactPage() {
                       <input
                         type="checkbox"
                         id={i.id}
+                        className={styles.checkbox}
                         checked={form.interests.includes(i.value)}
                         onChange={e => handleInterestChange(i.value, e.target.checked)}
                       />
@@ -375,6 +376,7 @@ export default function ContactPage() {
                         type="radio"
                         name="contact"
                         id={m.id}
+                        className={styles.radio}
                         value={m.value}
                         checked={form.contact === m.value}
                         onChange={e => updateField('contact', e.target.value)}
