@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
 import { getSupabase } from '@/lib/supabase';
+import Nav from './components/Nav';
+import Footer from './components/Footer';
 
 interface FormData {
   name: string;
@@ -83,6 +84,26 @@ export default function ContactPage() {
   const finalizedTextRef = useRef('');
   const baseTextRef = useRef('');
 
+  // Scroll-triggered animations via IntersectionObserver
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('animate-visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
+    );
+
+    const elements = document.querySelectorAll('.animate-on-scroll');
+    elements.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, []);
+
   // Validate form fields
   const validateField = useCallback((field: keyof FormData, value: string): string | undefined => {
     switch (field) {
@@ -137,7 +158,7 @@ export default function ContactPage() {
     setTouched({ name: true, email: true });
     const nameError = validateField('name', form.name);
     const emailError = validateField('email', form.email);
-    
+
     if (nameError || emailError) {
       setErrors({ name: nameError, email: emailError });
       return;
@@ -180,9 +201,9 @@ export default function ContactPage() {
         setShowSuccess(true);
       }
     } catch (err) {
-      setDbStatus({ 
-        message: `Connection error: ${err instanceof Error ? err.message : 'Please check your internet connection and try again.'}`, 
-        isError: true 
+      setDbStatus({
+        message: `Connection error: ${err instanceof Error ? err.message : 'Please check your internet connection and try again.'}`,
+        isError: true
       });
     } finally {
       setIsSubmitting(false);
@@ -297,76 +318,8 @@ export default function ContactPage() {
           color: ${textColor};
           transition: background 0.3s ease, color 0.3s ease;
         }
-        .nav {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          z-index: 50;
-          padding: 2rem 4rem;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          mix-blend-mode: ${darkMode ? 'difference' : 'normal'};
-        }
-        .navLeft {
-          display: flex;
-          align-items: center;
-          gap: 2rem;
-        }
-        .logo {
-          font-size: 1.5rem;
-          font-weight: 500;
-          color: ${darkMode ? 'white' : '#171717'};
-          text-decoration: none;
-          letter-spacing: 0.1em;
-          transition: opacity 0.3s ease;
-        }
-        .logo:hover {
-          opacity: 0.7;
-        }
-        .themeToggle {
-          padding: 0.5rem 1rem;
-          background: transparent;
-          border: 1px solid ${borderColor};
-          color: ${mutedColor};
-          font-size: 0.7rem;
-          font-weight: 500;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-          cursor: pointer;
-          transition: all 0.3s ease;
-        }
-        .themeToggle:hover {
-          background: ${cardBg};
-          color: ${textColor};
-        }
-        .navLink {
-          color: ${darkMode ? '#ffffff' : '#171717'} !important;
-          text-decoration: none;
-          font-size: 0.85rem;
-          font-weight: 400;
-          letter-spacing: 0.15em;
-          text-transform: uppercase;
-          transition: opacity 0.3s ease;
-          position: relative;
-        }
-        .navLink:visited {
-          color: ${darkMode ? '#ffffff' : '#171717'} !important;
-        }
-        .navLink::after {
-          content: '';
-          position: absolute;
-          bottom: -4px;
-          left: 0;
-          width: 0;
-          height: 1px;
-          background: #c9a962;
-          transition: width 0.3s ease;
-        }
-        .navLink:hover::after {
-          width: 100%;
-        }
+
+        /* ── Hero ───────────────────────────────── */
         .hero {
           position: relative;
           height: 100vh;
@@ -391,14 +344,25 @@ export default function ContactPage() {
         .heroOverlay {
           position: absolute;
           inset: 0;
-          background: ${darkMode 
-            ? 'linear-gradient(to top, rgba(10,10,10,0.95) 0%, rgba(10,10,10,0.4) 50%, rgba(10,10,10,0.2) 100%)'
-            : 'linear-gradient(to top, rgba(250,250,250,0.95) 0%, rgba(250,250,250,0.4) 50%, rgba(250,250,250,0.2) 100%)'
+          background: ${darkMode
+            ? 'linear-gradient(to top, rgba(10,10,10,0.97) 0%, rgba(10,10,10,0.5) 40%, rgba(10,10,10,0.15) 100%)'
+            : 'linear-gradient(to top, rgba(250,250,250,0.97) 0%, rgba(250,250,250,0.5) 40%, rgba(250,250,250,0.15) 100%)'
           };
+        }
+        /* Radial glow in hero */
+        .heroGlow {
+          position: absolute;
+          bottom: -20%;
+          left: -10%;
+          width: 60%;
+          height: 60%;
+          background: radial-gradient(ellipse at center, rgba(201,169,98,0.08) 0%, transparent 70%);
+          z-index: 1;
+          pointer-events: none;
         }
         .heroContent {
           position: relative;
-          z-index: 1;
+          z-index: 2;
           max-width: 1400px;
           width: 100%;
           margin: 0 auto;
@@ -406,9 +370,14 @@ export default function ContactPage() {
         .heroTitle {
           font-size: clamp(3rem, 10vw, 8rem);
           font-weight: 400;
-          color: ${textColor};
           margin-bottom: 1.5rem;
           line-height: 0.95;
+          background: linear-gradient(135deg, #c9a962 0%, #f5f0e0 40%, #c9a962 70%, #8a7340 100%);
+          background-size: 200% auto;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: heroTitleReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
         .heroSubtitle {
           font-size: clamp(1rem, 2vw, 1.25rem);
@@ -417,6 +386,8 @@ export default function ContactPage() {
           font-weight: 300;
           letter-spacing: 0.05em;
           text-transform: uppercase;
+          opacity: 0;
+          animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards;
         }
         .scrollIndicator {
           position: absolute;
@@ -426,6 +397,7 @@ export default function ContactPage() {
           flex-direction: column;
           align-items: center;
           gap: 0.75rem;
+          animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.8s both;
         }
         .scrollText {
           font-size: 0.7rem;
@@ -438,7 +410,21 @@ export default function ContactPage() {
           width: 1px;
           height: 60px;
           background: ${borderColor};
+          position: relative;
+          overflow: hidden;
         }
+        .scrollLine::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 50%;
+          background: #c9a962;
+          animation: scrollBounce 2s ease-in-out infinite;
+        }
+
+        /* ── Main ───────────────────────────────── */
         .main {
           padding: 8rem 4rem;
           max-width: 1400px;
@@ -447,35 +433,96 @@ export default function ContactPage() {
         .section {
           margin-bottom: 10rem;
         }
+
+        /* Scroll animation base state */
+        .animate-on-scroll {
+          opacity: 0;
+          transform: translateY(40px);
+          transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .animate-visible {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        /* ── Section Headers — overlapping numbers ── */
         .sectionHeader {
-          display: flex;
-          align-items: baseline;
-          gap: 2rem;
+          position: relative;
           margin-bottom: 4rem;
           padding-bottom: 1.5rem;
           border-bottom: 1px solid ${borderColor};
+          padding-left: 4rem;
         }
         .sectionNumber {
-          font-size: 0.9rem;
-          color: ${mutedColor};
+          position: absolute;
+          left: -0.5rem;
+          top: -1.5rem;
+          font-size: 5rem;
+          font-weight: 400;
+          color: ${darkMode ? 'rgba(201,169,98,0.08)' : 'rgba(201,169,98,0.12)'};
           font-style: italic;
+          line-height: 1;
+          pointer-events: none;
+          font-family: 'Cormorant Garamond', Georgia, serif;
         }
         .sectionTitle {
           font-size: clamp(2rem, 5vw, 3.5rem);
           color: ${textColor};
           font-weight: 400;
+          position: relative;
         }
+        .sectionAccent {
+          display: inline-block;
+          width: 40px;
+          height: 2px;
+          background: #c9a962;
+          margin-right: 1rem;
+          vertical-align: middle;
+        }
+
+        /* ── Profile/About — asymmetric ───────── */
         .profileSection {
           display: grid;
-          grid-template-columns: 1fr 1fr;
+          grid-template-columns: 2fr 3fr;
           gap: 6rem;
           align-items: center;
         }
         .profileImageWrapper {
           position: relative;
-          aspect-ratio: 1/1;
+          aspect-ratio: 3/4;
           overflow: hidden;
-          max-width: 50%;
+        }
+        /* Decorative corner accents on image */
+        .profileImageWrapper::before,
+        .profileImageWrapper::after {
+          content: '';
+          position: absolute;
+          width: 40px;
+          height: 40px;
+          border: 1px solid #c9a962;
+          z-index: 2;
+          pointer-events: none;
+          transition: all 0.4s ease;
+        }
+        .profileImageWrapper::before {
+          top: -8px;
+          left: -8px;
+          border-right: none;
+          border-bottom: none;
+        }
+        .profileImageWrapper::after {
+          bottom: -8px;
+          right: -8px;
+          border-left: none;
+          border-top: none;
+        }
+        .profileImageWrapper:hover::before {
+          top: -12px;
+          left: -12px;
+        }
+        .profileImageWrapper:hover::after {
+          bottom: -12px;
+          right: -12px;
         }
         .profileImage {
           width: 100%;
@@ -496,6 +543,37 @@ export default function ContactPage() {
           color: ${mutedColor};
           line-height: 1.8;
           margin-bottom: 2rem;
+        }
+
+        /* ── Form ───────────────────────────────── */
+        .formContainer {
+          position: relative;
+          padding: 3rem;
+          border: 1px solid ${borderColor};
+          background: ${darkMode ? 'rgba(20,20,20,0.5)' : 'rgba(255,255,255,0.5)'};
+          backdrop-filter: blur(12px);
+        }
+        /* Decorative corner accents on form */
+        .formContainer::before,
+        .formContainer::after {
+          content: '';
+          position: absolute;
+          width: 30px;
+          height: 30px;
+          border: 1px solid rgba(201,169,98,0.3);
+          pointer-events: none;
+        }
+        .formContainer::before {
+          top: -1px;
+          left: -1px;
+          border-right: none;
+          border-bottom: none;
+        }
+        .formContainer::after {
+          bottom: -1px;
+          right: -1px;
+          border-left: none;
+          border-top: none;
         }
         .formGrid {
           display: grid;
@@ -722,8 +800,8 @@ export default function ContactPage() {
           transition: all 0.3s ease, transform 0.2s ease;
         }
         .btnSecondary:hover {
-          border-color: ${textColor};
-          background: ${cardBg};
+          border-color: #c9a962;
+          color: #c9a962;
           transform: translateY(-1px);
         }
         .btnSecondary:focus {
@@ -827,12 +905,26 @@ export default function ContactPage() {
           border: 1px solid #ef4444;
           background: rgba(239, 68, 68, 0.05);
         }
+
+        /* ── Counter ────────────────────────────── */
         .counterSection {
           display: flex;
           align-items: center;
           justify-content: space-between;
           padding: 3rem;
           border: 1px solid ${borderColor};
+          position: relative;
+          overflow: hidden;
+        }
+        .counterSection::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background: linear-gradient(90deg, transparent, #c9a962, transparent);
+          opacity: 0.5;
         }
         .counterTitle {
           font-size: 1.25rem;
@@ -858,7 +950,8 @@ export default function ContactPage() {
         }
         .counterBtn:hover {
           background: ${cardBg};
-          border-color: ${textColor};
+          border-color: #c9a962;
+          color: #c9a962;
           transform: scale(1.05);
         }
         .counterBtn:focus {
@@ -871,7 +964,10 @@ export default function ContactPage() {
           min-width: 80px;
           text-align: center;
           color: #c9a962;
+          font-family: 'Cormorant Garamond', Georgia, serif;
         }
+
+        /* ── Modal ──────────────────────────────── */
         .modalOverlay {
           display: none;
           position: fixed;
@@ -891,6 +987,16 @@ export default function ContactPage() {
           padding: 4rem;
           max-width: 500px;
           width: 90%;
+          position: relative;
+        }
+        .modal::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background: linear-gradient(90deg, transparent, #c9a962, transparent);
         }
         .modalTitle {
           font-size: 2rem;
@@ -923,18 +1029,6 @@ export default function ContactPage() {
           outline: 2px solid #c9a962;
           outline-offset: 2px;
         }
-        .footer {
-          padding: 4rem;
-          border-top: 1px solid ${borderColor};
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        .footerText {
-          font-size: 0.8rem;
-          color: ${mutedColor};
-          letter-spacing: 0.05em;
-        }
         .srOnly {
           position: absolute;
           width: 1px;
@@ -946,6 +1040,8 @@ export default function ContactPage() {
           white-space: nowrap;
           border: 0;
         }
+
+        /* ── Responsive ─────────────────────────── */
         @media (max-width: 1024px) {
           .profileSection {
             grid-template-columns: 1fr;
@@ -960,12 +1056,6 @@ export default function ContactPage() {
           .hero {
             padding: 2rem;
           }
-          .nav {
-            padding: 1.5rem 2rem;
-          }
-          .navLeft {
-            gap: 1rem;
-          }
           .main {
             padding: 4rem 2rem;
           }
@@ -973,8 +1063,15 @@ export default function ContactPage() {
             margin-bottom: 5rem;
           }
           .sectionHeader {
-            flex-direction: column;
-            gap: 0.5rem;
+            padding-left: 0;
+          }
+          .sectionNumber {
+            font-size: 3rem;
+            left: -0.25rem;
+            top: -1rem;
+          }
+          .formContainer {
+            padding: 1.5rem;
           }
           .formActions {
             flex-direction: column;
@@ -982,29 +1079,10 @@ export default function ContactPage() {
           .scrollIndicator {
             display: none;
           }
-          .footer {
-            padding: 2rem;
-            flex-direction: column;
-            gap: 1rem;
-            text-align: center;
-          }
         }
       `}</style>
 
-      {/* Navigation */}
-      <nav className="nav" role="navigation" aria-label="Main navigation">
-        <div className="navLeft">
-          <Link href="/" className="logo" style={{ color: darkMode ? '#ffffff' : '#171717', textDecoration: 'none' }}>STUDIO</Link>
-          <button 
-            className="themeToggle" 
-            onClick={() => setDarkMode(!darkMode)}
-            aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-          >
-            {darkMode ? 'Light' : 'Dark'}
-          </button>
-        </div>
-        <Link href="/users" className="navLink" style={{ color: darkMode ? '#ffffff' : '#171717', textDecoration: 'none' }}>View Contacts</Link>
-      </nav>
+      <Nav currentPage="home" darkMode={darkMode} onToggleTheme={() => setDarkMode(!darkMode)} />
 
       {/* Hero Section */}
       <section className="hero" aria-label="Welcome section">
@@ -1019,6 +1097,7 @@ export default function ContactPage() {
           />
           <div className="heroOverlay" />
         </div>
+        <div className="heroGlow" aria-hidden="true" />
         <div className="heroContent">
           <h1 className="heroTitle">Get in Touch</h1>
           <p className="heroSubtitle">
@@ -1034,10 +1113,12 @@ export default function ContactPage() {
       {/* Main Content */}
       <main className="main" id="main-content">
         {/* Profile Section */}
-        <section className="section" aria-labelledby="about-title">
+        <section className="section animate-on-scroll" aria-labelledby="about-title">
           <div className="sectionHeader">
             <span className="sectionNumber" aria-hidden="true">01</span>
-            <h2 className="sectionTitle" id="about-title">About</h2>
+            <h2 className="sectionTitle" id="about-title">
+              <span className="sectionAccent" aria-hidden="true" />About
+            </h2>
           </div>
           <div className="profileSection">
             <div className="profileImageWrapper">
@@ -1046,18 +1127,18 @@ export default function ContactPage() {
                 alt="Professional profile photograph"
                 fill
                 className="profileImage"
-                sizes="(max-width: 1024px) 100vw, 50vw"
+                sizes="(max-width: 1024px) 100vw, 40vw"
               />
             </div>
             <div className="profileContent">
               <p className="profileText">
-                This is a test page designed for web automation tools like Playwright 
-                and Claude web plugins. The form below demonstrates various input types, 
+                This is a test page designed for web automation tools like Playwright
+                and Claude web plugins. The form below demonstrates various input types,
                 validation patterns, and modern UI interactions.
               </p>
               <p className="profileText">
-                Fill out the contact form to submit your information. You can also use 
-                the dictation feature to speak your notes, or let AI interpret and 
+                Fill out the contact form to submit your information. You can also use
+                the dictation feature to speak your notes, or let AI interpret and
                 auto-fill the form fields.
               </p>
             </div>
@@ -1065,225 +1146,229 @@ export default function ContactPage() {
         </section>
 
         {/* Contact Form Section */}
-        <section className="section" aria-labelledby="contact-title">
+        <section className="section animate-on-scroll" aria-labelledby="contact-title">
           <div className="sectionHeader">
             <span className="sectionNumber" aria-hidden="true">02</span>
-            <h2 className="sectionTitle" id="contact-title">Contact</h2>
+            <h2 className="sectionTitle" id="contact-title">
+              <span className="sectionAccent" aria-hidden="true" />Contact
+            </h2>
           </div>
-          
-          <form onSubmit={handleSubmit} noValidate aria-label="Contact form">
-            <div className="formGrid">
-              <div className="field">
-                <label htmlFor="name" className="fieldLabel">
-                  Full Name <span aria-hidden="true">*</span>
-                  <span className="srOnly">(required)</span>
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  placeholder="John Doe"
-                  autoComplete="name"
-                  className={`fieldInput ${errors.name ? 'fieldInputError' : ''}`}
-                  value={form.name}
-                  onChange={e => updateField('name', e.target.value)}
-                  onBlur={() => handleBlur('name')}
-                  aria-required="true"
-                  aria-invalid={errors.name ? 'true' : 'false'}
-                  aria-describedby={errors.name ? 'name-error' : undefined}
-                />
-                {errors.name && (
-                  <p className="fieldError" id="name-error" role="alert">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10"/>
-                      <line x1="12" y1="8" x2="12" y2="12"/>
-                      <line x1="12" y1="16" x2="12.01" y2="16"/>
-                    </svg>
-                    {errors.name}
+
+          <div className="formContainer">
+            <form onSubmit={handleSubmit} noValidate aria-label="Contact form">
+              <div className="formGrid">
+                <div className="field">
+                  <label htmlFor="name" className="fieldLabel">
+                    Full Name <span aria-hidden="true">*</span>
+                    <span className="srOnly">(required)</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    placeholder="John Doe"
+                    autoComplete="name"
+                    className={`fieldInput ${errors.name ? 'fieldInputError' : ''}`}
+                    value={form.name}
+                    onChange={e => updateField('name', e.target.value)}
+                    onBlur={() => handleBlur('name')}
+                    aria-required="true"
+                    aria-invalid={errors.name ? 'true' : 'false'}
+                    aria-describedby={errors.name ? 'name-error' : undefined}
+                  />
+                  {errors.name && (
+                    <p className="fieldError" id="name-error" role="alert">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                      </svg>
+                      {errors.name}
+                    </p>
+                  )}
+                </div>
+
+                <div className="field">
+                  <label htmlFor="email" className="fieldLabel">
+                    Email <span aria-hidden="true">*</span>
+                    <span className="srOnly">(required)</span>
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    placeholder="john@example.com"
+                    autoComplete="email"
+                    className={`fieldInput ${errors.email ? 'fieldInputError' : ''}`}
+                    value={form.email}
+                    onChange={e => updateField('email', e.target.value)}
+                    onBlur={() => handleBlur('email')}
+                    aria-required="true"
+                    aria-invalid={errors.email ? 'true' : 'false'}
+                    aria-describedby={errors.email ? 'email-error' : undefined}
+                  />
+                  {errors.email && (
+                    <p className="fieldError" id="email-error" role="alert">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                      </svg>
+                      {errors.email}
+                    </p>
+                  )}
+                </div>
+
+                <div className="field">
+                  <label htmlFor="address" className="fieldLabel">Street Address</label>
+                  <input
+                    type="text"
+                    id="address"
+                    placeholder="123 Main Street"
+                    autoComplete="street-address"
+                    className="fieldInput"
+                    value={form.address}
+                    onChange={e => updateField('address', e.target.value)}
+                  />
+                </div>
+
+                <div className="field">
+                  <label htmlFor="city" className="fieldLabel">City</label>
+                  <input
+                    type="text"
+                    id="city"
+                    placeholder="Oslo"
+                    autoComplete="address-level2"
+                    className="fieldInput"
+                    value={form.city}
+                    onChange={e => updateField('city', e.target.value)}
+                  />
+                </div>
+
+                <div className="field">
+                  <label htmlFor="country" className="fieldLabel">Country</label>
+                  <select
+                    id="country"
+                    className="fieldSelect"
+                    value={form.country}
+                    onChange={e => updateField('country', e.target.value)}
+                  >
+                    {COUNTRY_OPTIONS.map(o => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <fieldset className="field" style={{ border: 'none', padding: 0, margin: 0 }}>
+                  <legend className="fieldLabel">Interests</legend>
+                  <div className="optionGroup" role="group" aria-label="Select your interests">
+                    {INTERESTS.map(i => (
+                      <label key={i.value} className="optionItem">
+                        <input
+                          type="checkbox"
+                          id={i.id}
+                          className="checkbox"
+                          checked={form.interests.includes(i.value)}
+                          onChange={e => handleInterestChange(i.value, e.target.checked)}
+                          aria-label={i.label}
+                        />
+                        {i.label}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+
+                <fieldset className="field formGridFull" style={{ border: 'none', padding: 0, margin: 0 }}>
+                  <legend className="fieldLabel">Preferred Contact Method</legend>
+                  <div className="optionGroup" role="radiogroup" aria-label="Select preferred contact method">
+                    {CONTACT_METHODS.map(m => (
+                      <label key={m.value} className="optionItem">
+                        <input
+                          type="radio"
+                          name="contact"
+                          id={m.id}
+                          className="radio"
+                          value={m.value}
+                          checked={form.contact === m.value}
+                          onChange={e => updateField('contact', e.target.value)}
+                          aria-label={m.label}
+                        />
+                        {m.label}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+
+                <div className="field formGridFull">
+                  <label htmlFor="message" className="fieldLabel">Message</label>
+                  <textarea
+                    id="message"
+                    placeholder="Write your message here..."
+                    className="fieldTextarea"
+                    value={form.message}
+                    onChange={e => updateField('message', e.target.value)}
+                  />
+                </div>
+
+                <div className="field formGridFull">
+                  <label htmlFor="notes" className="fieldLabel">Notes</label>
+                  <textarea
+                    id="notes"
+                    placeholder="Dictate or write notes here..."
+                    className="fieldTextarea"
+                    value={form.notes}
+                    onChange={e => updateField('notes', e.target.value)}
+                    aria-describedby="notes-help"
+                  />
+                  <p id="notes-help" className="srOnly">
+                    You can use the dictate button to speak your notes or the AI auto-fill button to automatically fill the form
                   </p>
-                )}
+                  <div className="notesActions">
+                    <button
+                      type="button"
+                      className={`actionBtn ${isRecording ? 'actionBtnRecording' : ''}`}
+                      onClick={handleDictate}
+                      aria-label={isRecording ? 'Stop voice recording' : 'Start voice dictation'}
+                      aria-pressed={isRecording}
+                    >
+                      {isRecording ? 'Stop Recording' : 'Dictate'}
+                    </button>
+                    <button
+                      type="button"
+                      className="actionBtn"
+                      disabled={isAiFilling}
+                      onClick={handleAiFill}
+                      aria-label="Use AI to automatically fill form fields based on notes"
+                      aria-busy={isAiFilling}
+                    >
+                      {isAiFilling ? (
+                        <>
+                          <span className="spinner" aria-hidden="true"></span>
+                          Processing...
+                        </>
+                      ) : 'AI Auto-Fill'}
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              <div className="field">
-                <label htmlFor="email" className="fieldLabel">
-                  Email <span aria-hidden="true">*</span>
-                  <span className="srOnly">(required)</span>
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  placeholder="john@example.com"
-                  autoComplete="email"
-                  className={`fieldInput ${errors.email ? 'fieldInputError' : ''}`}
-                  value={form.email}
-                  onChange={e => updateField('email', e.target.value)}
-                  onBlur={() => handleBlur('email')}
-                  aria-required="true"
-                  aria-invalid={errors.email ? 'true' : 'false'}
-                  aria-describedby={errors.email ? 'email-error' : undefined}
-                />
-                {errors.email && (
-                  <p className="fieldError" id="email-error" role="alert">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10"/>
-                      <line x1="12" y1="8" x2="12" y2="12"/>
-                      <line x1="12" y1="16" x2="12.01" y2="16"/>
-                    </svg>
-                    {errors.email}
-                  </p>
-                )}
-              </div>
-
-              <div className="field">
-                <label htmlFor="address" className="fieldLabel">Street Address</label>
-                <input
-                  type="text"
-                  id="address"
-                  placeholder="123 Main Street"
-                  autoComplete="street-address"
-                  className="fieldInput"
-                  value={form.address}
-                  onChange={e => updateField('address', e.target.value)}
-                />
-              </div>
-
-              <div className="field">
-                <label htmlFor="city" className="fieldLabel">City</label>
-                <input
-                  type="text"
-                  id="city"
-                  placeholder="Oslo"
-                  autoComplete="address-level2"
-                  className="fieldInput"
-                  value={form.city}
-                  onChange={e => updateField('city', e.target.value)}
-                />
-              </div>
-
-              <div className="field">
-                <label htmlFor="country" className="fieldLabel">Country</label>
-                <select
-                  id="country"
-                  className="fieldSelect"
-                  value={form.country}
-                  onChange={e => updateField('country', e.target.value)}
+              <div className="formActions">
+                <button
+                  type="submit"
+                  className="btnPrimary"
+                  disabled={isSubmitting}
+                  aria-busy={isSubmitting}
                 >
-                  {COUNTRY_OPTIONS.map(o => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
+                  {isSubmitting ? (
+                    <>
+                      <span className="spinner" aria-hidden="true"></span>
+                      Submitting...
+                    </>
+                  ) : 'Submit'}
+                </button>
+                <button type="button" className="btnSecondary" onClick={handleReset}>Reset</button>
+                <button type="button" className="btnSecondary" onClick={() => setModalOpen(true)}>Open Modal</button>
               </div>
-
-              <fieldset className="field" style={{ border: 'none', padding: 0, margin: 0 }}>
-                <legend className="fieldLabel">Interests</legend>
-                <div className="optionGroup" role="group" aria-label="Select your interests">
-                  {INTERESTS.map(i => (
-                    <label key={i.value} className="optionItem">
-                      <input
-                        type="checkbox"
-                        id={i.id}
-                        className="checkbox"
-                        checked={form.interests.includes(i.value)}
-                        onChange={e => handleInterestChange(i.value, e.target.checked)}
-                        aria-label={i.label}
-                      />
-                      {i.label}
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-
-              <fieldset className="field formGridFull" style={{ border: 'none', padding: 0, margin: 0 }}>
-                <legend className="fieldLabel">Preferred Contact Method</legend>
-                <div className="optionGroup" role="radiogroup" aria-label="Select preferred contact method">
-                  {CONTACT_METHODS.map(m => (
-                    <label key={m.value} className="optionItem">
-                      <input
-                        type="radio"
-                        name="contact"
-                        id={m.id}
-                        className="radio"
-                        value={m.value}
-                        checked={form.contact === m.value}
-                        onChange={e => updateField('contact', e.target.value)}
-                        aria-label={m.label}
-                      />
-                      {m.label}
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-
-              <div className="field formGridFull">
-                <label htmlFor="message" className="fieldLabel">Message</label>
-                <textarea
-                  id="message"
-                  placeholder="Write your message here..."
-                  className="fieldTextarea"
-                  value={form.message}
-                  onChange={e => updateField('message', e.target.value)}
-                />
-              </div>
-
-              <div className="field formGridFull">
-                <label htmlFor="notes" className="fieldLabel">Notes</label>
-                <textarea
-                  id="notes"
-                  placeholder="Dictate or write notes here..."
-                  className="fieldTextarea"
-                  value={form.notes}
-                  onChange={e => updateField('notes', e.target.value)}
-                  aria-describedby="notes-help"
-                />
-                <p id="notes-help" className="srOnly">
-                  You can use the dictate button to speak your notes or the AI auto-fill button to automatically fill the form
-                </p>
-                <div className="notesActions">
-                  <button
-                    type="button"
-                    className={`actionBtn ${isRecording ? 'actionBtnRecording' : ''}`}
-                    onClick={handleDictate}
-                    aria-label={isRecording ? 'Stop voice recording' : 'Start voice dictation'}
-                    aria-pressed={isRecording}
-                  >
-                    {isRecording ? 'Stop Recording' : 'Dictate'}
-                  </button>
-                  <button
-                    type="button"
-                    className="actionBtn"
-                    disabled={isAiFilling}
-                    onClick={handleAiFill}
-                    aria-label="Use AI to automatically fill form fields based on notes"
-                    aria-busy={isAiFilling}
-                  >
-                    {isAiFilling ? (
-                      <>
-                        <span className="spinner" aria-hidden="true"></span>
-                        Processing...
-                      </>
-                    ) : 'AI Auto-Fill'}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="formActions">
-              <button 
-                type="submit" 
-                className="btnPrimary" 
-                disabled={isSubmitting}
-                aria-busy={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <span className="spinner" aria-hidden="true"></span>
-                    Submitting...
-                  </>
-                ) : 'Submit'}
-              </button>
-              <button type="button" className="btnSecondary" onClick={handleReset}>Reset</button>
-              <button type="button" className="btnSecondary" onClick={() => setModalOpen(true)}>Open Modal</button>
-            </div>
-          </form>
+            </form>
+          </div>
 
           {/* Success State */}
           {showSuccess && (
@@ -1346,7 +1431,7 @@ export default function ContactPage() {
 
           {/* DB Status */}
           {dbStatus && (
-            <p 
+            <p
               className={`dbStatus ${dbStatus.isError ? 'dbStatusError' : 'dbStatusSuccess'}`}
               role="status"
               aria-live="polite"
@@ -1357,10 +1442,12 @@ export default function ContactPage() {
         </section>
 
         {/* Counter Section */}
-        <section className="section" aria-labelledby="interaction-title">
+        <section className="section animate-on-scroll" aria-labelledby="interaction-title">
           <div className="sectionHeader">
             <span className="sectionNumber" aria-hidden="true">03</span>
-            <h2 className="sectionTitle" id="interaction-title">Interaction</h2>
+            <h2 className="sectionTitle" id="interaction-title">
+              <span className="sectionAccent" aria-hidden="true" />Interaction
+            </h2>
           </div>
           <div className="counterSection">
             <span className="counterTitle">Counter Test Widget</span>
@@ -1387,11 +1474,7 @@ export default function ContactPage() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="footer" role="contentinfo">
-        <span className="footerText">Test Page for Web Automation</span>
-        <span className="footerText">Built with Next.js & Supabase</span>
-      </footer>
+      <Footer darkMode={darkMode} />
 
       {/* Modal */}
       <div

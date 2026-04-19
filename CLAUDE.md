@@ -34,13 +34,19 @@ npm run start   # serve production build locally
 
 `vercel.json` sets `"framework": "nextjs"`. The only server-side code is the API route; both pages are `"use client"` components.
 
+## Styling
+
+No Tailwind or CSS modules. All styling uses **styled-jsx** (`<style jsx>` blocks inside components). CSS variables are defined in `app/globals.css`. Dynamic styles (dark/light mode, theme colors) are passed as template literal values into the JSX style block. Shared components (`Nav`, `Footer`) accept `darkMode` and color props.
+
+Font stack: **Cormorant Garamond** (headings, via Google Fonts) + **DM Sans** (body). Both imported in `app/layout.tsx`.
+
 ## AI Form Fill (API Route)
 
-The "AI Fyll" button sends the notes textarea content to `/api/interpret`, which calls the Claude API to extract structured contact data and auto-fills the form.
+The "AI Auto-Fill" button sends the notes textarea content to `/api/interpret`, which calls the Claude API to extract structured contact data and auto-fills the form.
 
 - **Route handler:** `app/api/interpret/route.ts` — POST endpoint, uses `@anthropic-ai/sdk`
 - **Environment variable:** `ANTHROPIC_API_KEY` (server-side only, set in Vercel dashboard or `.env.local`)
-- **Model:** `claude-sonnet-4-20250514` for cost-efficient structured extraction
+- **Model:** `claude-sonnet-4-6` for cost-efficient structured extraction
 
 ## Speech-to-Text (Soniox)
 
@@ -54,3 +60,15 @@ Supabase client is created in `lib/supabase.ts` using `NEXT_PUBLIC_SUPABASE_URL`
 
 - `app/page.tsx` inserts rows via `supabase.from('contacts').insert({...})`
 - `app/users/page.tsx` reads rows via `supabase.from('contacts').select('*').order('created_at', { ascending: false })`
+
+## Playwright Testing
+
+Playwright is installed (`pip install playwright`) with the Chromium headless shell binary. Test scripts are plain Python files in the project root (e.g., `test_design.py`). Screenshots are written to `/tmp/design-screenshots/` by convention. The dev server must be running on port 3000 before executing tests.
+
+```bash
+python test_design.py
+```
+
+## Skills
+
+Anthropic Agent Skills are installed in `.claude/skills/`. Currently installed: `frontend-design`, `webapp-testing`, `pdf`, `docx`, `pptx`, `xlsx`, `claude-api`, `mcp-builder`, `canvas-design`, `algorithmic-art`, `brand-guidelines`, `theme-factory`, `web-artifacts-builder`, `doc-coauthoring`, `internal-comms`, `slack-gif-creator`, `skill-creator`. Invoke with `/<skill-name>`.
