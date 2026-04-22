@@ -105,6 +105,8 @@ export default function Nav({ currentPage, darkMode = true, onToggleTheme, userE
         }
         .navLink:hover { color: #c9a962; }
         .navLink:hover::after { width: 100%; }
+        .navLinkActive { color: #c9a962; }
+        .navLinkActive::after { width: 100%; }
         .logoutBtn {
           padding: 0.5rem 1rem;
           background: transparent;
@@ -126,6 +128,8 @@ export default function Nav({ currentPage, darkMode = true, onToggleTheme, userE
           .nav { padding: 1.5rem 2rem; }
           .navLeft { gap: 1rem; }
           .userEmail { display: none; }
+          .navRight { gap: 1rem; }
+          .navLink { font-size: 0.7rem; letter-spacing: 0.08em; }
         }
       `}</style>
 
@@ -145,11 +149,11 @@ export default function Nav({ currentPage, darkMode = true, onToggleTheme, userE
 
         <div className="navRight">
           {userEmail && <span className="userEmail">{userEmail}</span>}
-          {currentPage === 'home' && <Link href="/users" className="navLink">Contacts</Link>}
-          {currentPage === 'users' && <Link href="/" className="navLink">Form</Link>}
-          {currentPage !== 'home' && currentPage !== 'users' && (
-            <Link href="/" className="navLink">Home</Link>
-          )}
+          <Link href="/" className={`navLink${currentPage === 'home' ? ' navLinkActive' : ''}`}>Form</Link>
+          <Link href="/users" className={`navLink${currentPage === 'users' ? ' navLinkActive' : ''}`}>Contacts</Link>
+          <Link href="/pricing" className={`navLink${currentPage === 'pricing' ? ' navLinkActive' : ''}`}>Pricing</Link>
+          <Link href="/settings/billing" className={`navLink${currentPage === 'billing' ? ' navLinkActive' : ''}`}>Billing</Link>
+          <Link href="/settings/members" className={`navLink${currentPage === 'members' ? ' navLinkActive' : ''}`}>Members</Link>
           <button className="logoutBtn" onClick={handleLogout} aria-label="Sign out">
             Sign Out
           </button>
