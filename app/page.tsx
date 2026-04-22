@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import Image from 'next/image';
-import { getSupabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase/client';
 import Nav from './components/Nav';
 import Footer from './components/Footer';
 
@@ -78,11 +78,30 @@ export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
+  const [clubId, setClubId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sonioxClientRef = useRef<any>(null);
   const finalizedTextRef = useRef('');
   const baseTextRef = useRef('');
+
+  // Fetch current user's club_id and email on mount
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      setUserEmail(user.email ?? null);
+      supabase
+        .from('club_members')
+        .select('club_id')
+        .eq('user_id', user.id)
+        .single()
+        .then(({ data }) => {
+          if (data) setClubId(data.club_id);
+        });
+    });
+  }, []);
 
   // Scroll-triggered animations via IntersectionObserver
   useEffect(() => {
@@ -182,7 +201,8 @@ export default function ContactPage() {
     });
 
     try {
-      const { error } = await getSupabase().from('contacts').insert({
+      const supabase = createClient();
+      const { error } = await supabase.from('contacts').insert({
         name: form.name,
         email: form.email,
         address: form.address || null,
@@ -192,6 +212,7 @@ export default function ContactPage() {
         contact_method: form.contact || null,
         message: form.message || null,
         notes: form.notes || null,
+        club_id: clubId,
       });
 
       if (error) {
@@ -1082,7 +1103,7 @@ export default function ContactPage() {
         }
       `}</style>
 
-      <Nav currentPage="home" darkMode={darkMode} onToggleTheme={() => setDarkMode(!darkMode)} />
+      <Nav currentPage="home" darkMode={darkMode} onToggleTheme={() => setDarkMode(!darkMode)} userEmail={userEmail} />
 
       {/* Hero Section */}
       <section className="hero" aria-label="Welcome section">

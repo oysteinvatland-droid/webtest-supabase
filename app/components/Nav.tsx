@@ -1,34 +1,43 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 
 interface NavProps {
-  currentPage: 'home' | 'users';
+  currentPage: 'home' | 'users' | 'pricing' | 'billing' | 'members';
   darkMode?: boolean;
   onToggleTheme?: () => void;
+  userEmail?: string | null;
 }
 
-export default function Nav({ currentPage, darkMode = true, onToggleTheme }: NavProps) {
+export default function Nav({ currentPage, darkMode = true, onToggleTheme, userEmail }: NavProps) {
+  const router = useRouter();
   const textColor = darkMode ? '#ffffff' : '#171717';
   const borderColor = darkMode ? '#262626' : '#e5e5e5';
   const mutedColor = darkMode ? '#737373' : '#525252';
   const cardBg = darkMode ? '#171717' : '#f5f5f5';
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/login');
+    router.refresh();
+  };
 
   return (
     <>
       <style jsx>{`
         .nav {
           position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
+          top: 0; left: 0; right: 0;
           z-index: 50;
           padding: 2rem 4rem;
           display: flex;
           justify-content: space-between;
           align-items: center;
-          background: ${currentPage === 'users' ? '#0a0a0a' : 'transparent'};
-          border-bottom: ${currentPage === 'users' ? '1px solid #262626' : 'none'};
+          background: ${currentPage === 'home' ? 'transparent' : '#0a0a0a'};
+          border-bottom: ${currentPage === 'home' ? 'none' : '1px solid #262626'};
           mix-blend-mode: ${currentPage === 'home' && darkMode ? 'difference' : 'normal'};
         }
         .navLeft {
@@ -42,12 +51,10 @@ export default function Nav({ currentPage, darkMode = true, onToggleTheme }: Nav
           color: ${textColor};
           text-decoration: none;
           letter-spacing: 0.15em;
-          transition: all 0.3s ease;
+          transition: color 0.3s ease;
           font-family: 'DM Sans', system-ui, sans-serif;
         }
-        .logo:hover {
-          color: #c9a962;
-        }
+        .logo:hover { color: #c9a962; }
         .themeToggle {
           padding: 0.5rem 1rem;
           background: transparent;
@@ -59,11 +66,22 @@ export default function Nav({ currentPage, darkMode = true, onToggleTheme }: Nav
           text-transform: uppercase;
           cursor: pointer;
           transition: all 0.3s ease;
+          font-family: inherit;
         }
         .themeToggle:hover {
           background: ${cardBg};
           color: ${textColor};
           border-color: #c9a962;
+        }
+        .navRight {
+          display: flex;
+          align-items: center;
+          gap: 1.5rem;
+        }
+        .userEmail {
+          font-size: 0.75rem;
+          color: ${mutedColor};
+          letter-spacing: 0.05em;
         }
         .navLink {
           color: ${textColor};
@@ -72,36 +90,42 @@ export default function Nav({ currentPage, darkMode = true, onToggleTheme }: Nav
           font-weight: 400;
           letter-spacing: 0.15em;
           text-transform: uppercase;
-          transition: all 0.3s ease;
+          transition: color 0.3s ease;
           position: relative;
           padding-bottom: 4px;
         }
-        .navLink:visited {
-          color: ${textColor};
-        }
+        .navLink:visited { color: ${textColor}; }
         .navLink::after {
           content: '';
           position: absolute;
-          bottom: 0;
-          left: 0;
-          width: 0;
-          height: 1px;
+          bottom: 0; left: 0;
+          width: 0; height: 1px;
           background: #c9a962;
           transition: width 0.3s ease;
         }
-        .navLink:hover {
-          color: #c9a962;
+        .navLink:hover { color: #c9a962; }
+        .navLink:hover::after { width: 100%; }
+        .logoutBtn {
+          padding: 0.5rem 1rem;
+          background: transparent;
+          border: 1px solid ${borderColor};
+          color: ${mutedColor};
+          font-size: 0.7rem;
+          font-weight: 500;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          font-family: inherit;
         }
-        .navLink:hover::after {
-          width: 100%;
+        .logoutBtn:hover {
+          border-color: #ef4444;
+          color: #ef4444;
         }
         @media (max-width: 768px) {
-          .nav {
-            padding: 1.5rem 2rem;
-          }
-          .navLeft {
-            gap: 1rem;
-          }
+          .nav { padding: 1.5rem 2rem; }
+          .navLeft { gap: 1rem; }
+          .userEmail { display: none; }
         }
       `}</style>
 
@@ -118,11 +142,18 @@ export default function Nav({ currentPage, darkMode = true, onToggleTheme }: Nav
             </button>
           )}
         </div>
-        {currentPage === 'home' ? (
-          <Link href="/users" className="navLink">View Contacts</Link>
-        ) : (
-          <Link href="/" className="navLink">Back to Form</Link>
-        )}
+
+        <div className="navRight">
+          {userEmail && <span className="userEmail">{userEmail}</span>}
+          {currentPage === 'home' && <Link href="/users" className="navLink">Contacts</Link>}
+          {currentPage === 'users' && <Link href="/" className="navLink">Form</Link>}
+          {currentPage !== 'home' && currentPage !== 'users' && (
+            <Link href="/" className="navLink">Home</Link>
+          )}
+          <button className="logoutBtn" onClick={handleLogout} aria-label="Sign out">
+            Sign Out
+          </button>
+        </div>
       </nav>
     </>
   );
