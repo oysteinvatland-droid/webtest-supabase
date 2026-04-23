@@ -33,6 +33,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }
 
+  console.log('[webhook] SUPABASE_URL set:', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
+  console.log('[webhook] SERVICE_ROLE_KEY length:', process.env.SUPABASE_SERVICE_ROLE_KEY?.length ?? 0);
+  console.log('[webhook] SERVICE_ROLE_KEY prefix:', process.env.SUPABASE_SERVICE_ROLE_KEY?.slice(0, 10));
   const supabase = getAdminClient();
 
   switch (event.type) {
