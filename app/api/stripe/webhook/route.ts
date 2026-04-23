@@ -39,13 +39,17 @@ export async function POST(request: Request) {
     case 'checkout.session.completed': {
       const session = event.data.object;
       const clubId = session.metadata?.club_id;
+      console.log('[webhook] checkout.session.completed clubId:', clubId, 'subscription:', session.subscription);
       if (!clubId || !session.subscription) break;
 
       const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
       const priceId = subscription.items.data[0]?.price.id;
       const plan = PRICE_TO_PLAN[priceId] ?? 'free';
+      console.log('[webhook] priceId:', priceId, '→ plan:', plan, 'PRICE_TO_PLAN keys:', Object.keys(PRICE_TO_PLAN));
 
-      await supabase.from('clubs').update({ plan }).eq('id', clubId);
+      const { error } = await supabase.from('clubs').update({ plan }).eq('id', clubId);
+      if (error) console.error('[webhook] clubs update error:', error);
+      else console.log('[webhook] clubs updated to plan:', plan);
       break;
     }
 
@@ -56,11 +60,14 @@ export async function POST(request: Request) {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const clubId = (customer as any).metadata?.club_id;
+      console.log('[webhook] subscription.updated clubId:', clubId);
       if (!clubId) break;
 
       const priceId = subscription.items.data[0]?.price.id;
       const plan = PRICE_TO_PLAN[priceId] ?? 'free';
-      await supabase.from('clubs').update({ plan }).eq('id', clubId);
+      console.log('[webhook] priceId:', priceId, '→ plan:', plan);
+      const { error } = await supabase.from('clubs').update({ plan }).eq('id', clubId);
+      if (error) console.error('[webhook] clubs update error:', error);
       break;
     }
 
@@ -73,7 +80,8 @@ export async function POST(request: Request) {
       const clubId = (customer as any).metadata?.club_id;
       if (!clubId) break;
 
-      await supabase.from('clubs').update({ plan: 'free' }).eq('id', clubId);
+      const { error } = await supabase.from('clubs').update({ plan: 'free' }).eq('id', clubId);
+      if (error) console.error('[webhook] clubs update error (deleted):', error);
       break;
     }
   }
