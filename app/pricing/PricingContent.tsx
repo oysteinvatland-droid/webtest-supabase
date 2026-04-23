@@ -1,8 +1,10 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Nav from '../components/Nav';
 import Footer from '../components/Footer';
+import { createClient } from '@/lib/supabase/client';
 
 const PLAN_FEATURES = {
   free: ['Up to 10 members', 'Contact form', 'AI auto-fill', 'Voice dictation'],
@@ -16,6 +18,24 @@ interface Props {
 }
 
 export default function PricingContent({ priceBasic, pricePremium }: Props) {
+  const [currentPlan, setCurrentPlan] = useState<string | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      supabase
+        .from('club_members')
+        .select('clubs(plan)')
+        .eq('user_id', user.id)
+        .single()
+        .then(({ data }) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          setCurrentPlan((data as any)?.clubs?.plan ?? 'free');
+        });
+    });
+  }, []);
+
   const plans = [
     {
       name: 'Free',
@@ -210,6 +230,26 @@ export default function PricingContent({ priceBasic, pricePremium }: Props) {
           border-color: #c9a962;
           color: #c9a962;
         }
+        .btnCurrent {
+          background: transparent;
+          border: 1px solid #262626;
+          color: #737373;
+          cursor: default;
+        }
+        .currentBadge {
+          position: absolute;
+          top: -1px; left: 50%;
+          transform: translateX(-50%);
+          background: #2a2a2a;
+          color: #c9a962;
+          font-size: 0.65rem;
+          font-weight: 600;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          padding: 0.3rem 1rem;
+          border: 1px solid #c9a96240;
+          white-space: nowrap;
+        }
         @media (max-width: 900px) {
           .grid { grid-template-columns: 1fr; max-width: 420px; margin: 0 auto; }
           .header { padding: 10rem 2rem 4rem; }
@@ -229,8 +269,11 @@ export default function PricingContent({ priceBasic, pricePremium }: Props) {
 
       <main className="main">
         <div className="grid">
-          {plans.map(plan => (
-            <div key={plan.name} className={`card ${plan.highlight ? 'cardHighlight' : ''}`}>
+          {plans.map(plan => {
+            const isCurrent = currentPlan === plan.name.toLowerCase();
+            return (
+            <div key={plan.name} className={`card ${plan.highlight && !isCurrent ? 'cardHighlight' : ''}`}>
+              {isCurrent && <span className="currentBadge">Current plan</span>}
               <div className="planName">{plan.name}</div>
               <div className="planPrice">
                 <span className="planPriceUnit">kr </span>{plan.price}
@@ -245,7 +288,9 @@ export default function PricingContent({ priceBasic, pricePremium }: Props) {
                   </li>
                 ))}
               </ul>
-              {'href' in plan && plan.href ? (
+              {isCurrent ? (
+                <button className="btn btnCurrent" disabled>Current plan</button>
+              ) : 'href' in plan && plan.href ? (
                 <Link href={plan.href} className={`btn ${plan.highlight ? 'btnPrimary' : 'btnOutline'}`}>
                   {plan.cta}
                 </Link>
@@ -258,7 +303,8 @@ export default function PricingContent({ priceBasic, pricePremium }: Props) {
                 </form>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       </main>
 
