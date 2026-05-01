@@ -78,6 +78,32 @@ export default async function DashboardPage() {
                 })}
               </div>
             </div>
+
+            <div style={{ border: '1px solid #262626', padding: '2.5rem', position: 'relative' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, transparent, #c9a962, transparent)' }} />
+              <div style={{ fontSize: '0.7rem', fontWeight: 500, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#737373', marginBottom: '1.5rem' }}>
+                Monthly Trend
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {(() => {
+                  const maxCount = Math.max(...stats.byMonth.map(m => m.count), 1);
+                  return stats.byMonth.map(({ label, count }) => {
+                    const pct = Math.round((count / maxCount) * 100);
+                    return (
+                      <div key={label}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem', fontSize: '0.8rem', color: '#a3a3a3' }}>
+                          <span>{label}</span>
+                          <span style={{ color: '#f5f5f0' }}>{count}</span>
+                        </div>
+                        <div style={{ height: 4, background: '#1a1a1a', borderRadius: 2 }}>
+                          <div style={{ height: '100%', width: `${Math.max(pct, 2)}%`, background: '#c9a962', borderRadius: 2 }} />
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
           </div>
         )}
       </main>
