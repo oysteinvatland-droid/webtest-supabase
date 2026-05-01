@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
 interface NavProps {
-  currentPage: 'home' | 'users' | 'pricing' | 'billing' | 'members';
+  currentPage: 'home' | 'users' | 'pricing' | 'billing' | 'members' | 'dashboard';
   darkMode?: boolean;
   onToggleTheme?: () => void;
   userEmail?: string | null;
@@ -149,6 +149,7 @@ export default function Nav({ currentPage, darkMode = true, onToggleTheme, userE
 
         <div className="navRight">
           {userEmail && <span className="userEmail">{userEmail}</span>}
+          <Link href="/dashboard" className={`navLink${currentPage === 'dashboard' ? ' navLinkActive' : ''}`}>Dashboard</Link>
           <Link href="/" className={`navLink${currentPage === 'home' ? ' navLinkActive' : ''}`}>Form</Link>
           <Link href="/users" className={`navLink${currentPage === 'users' ? ' navLinkActive' : ''}`}>Contacts</Link>
           <Link href="/pricing" className={`navLink${currentPage === 'pricing' ? ' navLinkActive' : ''}`}>Pricing</Link>
