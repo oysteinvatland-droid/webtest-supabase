@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { createClient } from '@/lib/supabase/server';
+import { getAdminClub } from '@/lib/club';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +13,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Get priceId from either JSON body or form data
   let priceId: string | null = null;
   const contentType = request.headers.get('content-type') ?? '';
   if (contentType.includes('application/json')) {
@@ -27,23 +27,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Missing priceId' }, { status: 400 });
   }
 
-  // Get user's club
-  const { data: membership } = await supabase
-    .from('club_members')
-    .select('club_id, clubs(id, name, stripe_customer_id)')
-    .eq('user_id', user.id)
-    .eq('role', 'admin')
-    .single();
-
+  const membership = await getAdminClub(supabase, user.id);
   if (!membership) {
     return NextResponse.json({ error: 'No admin club found' }, { status: 403 });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const club = (membership as any).clubs;
-  let customerId: string = club.stripe_customer_id;
+  const { club } = membership;
+  let customerId = club.stripe_customer_id;
 
-  // Create Stripe customer if not exists
   if (!customerId) {
     const customer = await stripe.customers.create({
       email: user.email,
@@ -70,7 +61,6 @@ export async function POST(request: Request) {
     metadata: { club_id: club.id },
   });
 
-  // For form submissions, redirect directly
   if (!contentType.includes('application/json')) {
     return NextResponse.redirect(session.url!, 303);
   }

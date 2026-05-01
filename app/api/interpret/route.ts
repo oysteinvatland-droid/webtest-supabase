@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { createClient } from '@/lib/supabase/server';
 
 const client = new Anthropic();
 
@@ -18,6 +19,12 @@ Return ONLY valid JSON (no markdown, no code fences) with these fields:
 Use "" for string fields and [] for arrays when the information is not present in the text.`;
 
 export async function POST(request: Request) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const body = await request.json().catch(() => ({}));
   const { text } = body as { text?: string };
 

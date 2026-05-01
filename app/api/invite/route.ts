@@ -1,14 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { createClient as createSupabaseAdmin } from '@supabase/supabase-js';
+import { getAdminClient } from '@/lib/supabase/admin';
+import { getAdminClub } from '@/lib/club';
 import { getMemberLimit } from '@/lib/plan-limits';
-
-function getAdminClient() {
-  return createSupabaseAdmin(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -24,26 +18,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Missing email' }, { status: 400 });
   }
 
-  const { data: membership } = await supabase
-    .from('club_members')
-    .select('club_id, clubs(id, name, plan)')
-    .eq('user_id', user.id)
-    .eq('role', 'admin')
-    .single();
-
+  const membership = await getAdminClub(supabase, user.id);
   if (!membership) {
     return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const club = (membership as any).clubs;
-  const plan: string = club?.plan ?? 'free';
-  const limit = getMemberLimit(plan);
+  const { club, club_id } = membership;
+  const limit = getMemberLimit(club.plan);
 
   const { count } = await supabase
     .from('club_members')
     .select('*', { count: 'exact', head: true })
-    .eq('club_id', membership.club_id);
+    .eq('club_id', club_id);
 
   const currentCount = count ?? 0;
 
@@ -59,7 +45,7 @@ export async function POST(request: Request) {
 
   const admin = getAdminClient();
   const { error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
-    data: { invited_by_club: club?.id },
+    data: { invited_by_club: club.id },
   });
 
   if (inviteError) {

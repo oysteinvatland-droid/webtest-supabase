@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { getMemberLimit } from '@/lib/plan-limits';
+import { getAdminClub } from '@/lib/club';
 import Nav from '../../components/Nav';
 import Footer from '../../components/Footer';
 
@@ -32,22 +34,13 @@ export default function MembersPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push('/login'); return; }
 
-      const { data: membership } = await supabase
-        .from('club_members')
-        .select('club_id, role, clubs(id, name, plan)')
-        .eq('user_id', user.id)
-        .single();
+      const membership = await getAdminClub(supabase, user.id);
+      if (!membership) { router.push('/'); return; }
 
-      if (!membership || membership.role !== 'admin') { router.push('/'); return; }
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const club = (membership as any).clubs;
-      setClubName(club?.name ?? '');
-      setPlan(club?.plan ?? 'free');
+      setClubName(membership.club.name);
+      setPlan(membership.club.plan);
       setClubId(membership.club_id);
-
-      const LIMITS: Record<string, number> = { free: 10, basic: 100, premium: Infinity };
-      setLimit(LIMITS[club?.plan ?? 'free'] ?? 10);
+      setLimit(getMemberLimit(membership.club.plan));
 
       const { data: rows } = await supabase
         .from('club_members')

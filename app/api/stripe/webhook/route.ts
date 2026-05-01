@@ -1,16 +1,9 @@
 import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
-import { createClient as createSupabaseAdmin } from '@supabase/supabase-js';
+import { getAdminClient } from '@/lib/supabase/admin';
+import { getPlanFromPriceId } from '@/lib/stripe-helpers';
 
 export const dynamic = 'force-dynamic';
-
-// Service role client — only used here (server-to-server webhook, never exposed to browser)
-function getAdminClient() {
-  return createSupabaseAdmin(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
 
 const PRICE_TO_PLAN: Record<string, string> = {
   [process.env.STRIPE_PRICE_BASIC ?? '']: 'basic',
@@ -47,7 +40,7 @@ export async function POST(request: Request) {
 
       const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
       const priceId = subscription.items.data[0]?.price.id;
-      const plan = PRICE_TO_PLAN[priceId] ?? 'free';
+      const plan = getPlanFromPriceId(priceId, PRICE_TO_PLAN);
       console.log('[webhook] priceId:', priceId, '→ plan:', plan, 'PRICE_TO_PLAN keys:', Object.keys(PRICE_TO_PLAN));
 
       const { error } = await supabase.from('clubs').update({ plan }).eq('id', clubId);
@@ -67,7 +60,7 @@ export async function POST(request: Request) {
       if (!clubId) break;
 
       const priceId = subscription.items.data[0]?.price.id;
-      const plan = PRICE_TO_PLAN[priceId] ?? 'free';
+      const plan = getPlanFromPriceId(priceId, PRICE_TO_PLAN);
       console.log('[webhook] priceId:', priceId, '→ plan:', plan);
       const { error } = await supabase.from('clubs').update({ plan }).eq('id', clubId);
       if (error) console.error('[webhook] clubs update error:', error);
